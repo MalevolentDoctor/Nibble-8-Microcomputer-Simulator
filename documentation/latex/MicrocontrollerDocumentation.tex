@@ -1,0 +1,121 @@
+\documentclass[10pt]{article}
+\usepackage{geometry}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{colortbl}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{multicol}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{pdfpages}
+
+\geometry{left=20mm, right=20mm, textheight=675pt}
+
+%BOLD TEXT
+\newcommand{\bv}[1]{\mathbf{#1}} %bold
+\newcommand{\bh}[1]{\hat{\mathbf{#1}}} %bold hat
+\newcommand{\bdot}[1]{\dot{\mathbf{#1}}} %bold dot
+\newcommand{\bddot}[1]{\ddot{\mathbf{#1}}} %bold double dot
+
+\begin{document}
+
+\title{Microcontroller Documentation}
+\author{Charles Glasspool}
+
+\maketitle
+
+\section{Architecture}
+
+\section{Instruction Set Summary}
+
+\textbf{FLAGS}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+\verb|S| & \verb|Z| & \verb|P| & \verb|C| & \verb|CA| & & & \\
+\hline
+\end{tabular}
+\end{center}
+
+
+\begin{tabular}{|p{4cm}p{6cm}cp{1cm}p{2cm}|}
+\hline
+Instruction & Description & Cycles (T/F) & Opcode & Flags\\
+\hline
+\multicolumn{5}{|c|}{\textbf{Arithmatic}}\\
+\hline
+\verb|ADD [r1]| & Adds the contents of register \verb|r1| to the value in the accumulator, storing the result in the accumulator. & 1 & & 1,2,3,4\\
+\verb|ADI [data]| & Adds the immediate value \verb|data| to the accumulator  value, storing the result in the accumulator& 2 & & 1,2,3,4\\
+\verb|SUB [r1]| & Subtrcts the contents of register \verb|r1| from the value in the accumulator, storing the result in the accumulator. & 1 & & 1,2,3,4\\
+\verb|SBI [data]| & Subtracts the immediate value \verb|data| fro the the accumulator value, storing the result in the accumulator & 2 & & 1,2,3,4\\
+\hline
+\multicolumn{5}{|c|}{\textbf{Data Transfer}}\\
+\hline
+\verb|MOV [r1] [r2]| & Copies the contents from the \verb|r1| register to the \verb|r2| register & 1 & & none\\
+\verb|LDA [addr]| & Loads the content of \verb|addr| to the accumulator & 4 & & none\\
+\verb|STA [addr]| & Stores the content of the accumulator to address \verb|addr| & 4 & & none \\
+\hline
+\multicolumn{5}{|c|}{\textbf{Logic}}\\
+\hline
+\hline
+\multicolumn{5}{|c|}{\textbf{Branch Control}}\\
+\hline
+\verb|JMP [addr]/[label]| & Unconditionally sets the program pointer to the address specified, either as a literal value or a label of another location in the program & 3 & & none \\
+\verb|J[...] [addr]/[label]| & Conditional jump depending on flag status: 
+\newline\verb|SP| sign positive (\verb|S| = 1),
+\newline\verb|SN| sign negative (\verb|S| = 0),
+\newline\verb|Z| zero value (\verb|Z| = 1),
+\newline\verb|NZ| non-zero value (\verb|Z| = 0),
+\newline\verb|PO| parity odd (\verb|P| = 1),
+\newline\verb|PE| parity even (\verb|P| = 0),
+\newline\verb|C| carry/borrow (\verb|C| = 1),
+\newline\verb|NC| no carry/borrow (\verb|C| = 0) & 3/2 && none\\
+\verb|CALL [addr]/[label]| & Unconditionally calls a subroutine, pushing the current program pointer the stack and setting the new program pointer to the specified address/label & 5 & & none \\
+\verb|C[...] [addr]/[label]| & Conditional call depending on flag status (see \texttt{J[...]|}) & 5/2 && none\\
+\verb|RET| & Unconditionally return from a subroutine, pops the address called from from the stack and sets the program pointer to it. & 3 & & none \\
+\verb|R[...] [addr]/[label]| & Conditional return depending on flag status (see \texttt{J[...]|}) & 3/1 && none\\
+\hline
+\end{tabular}
+
+\section{Instruction Set Details}
+Register inputs can be provided as either a numerical index of the register or using a keyword specific to the register.
+
+opcode goes to the instruction register
+
+8 bit instruction register 
+
+\begin{tabular}{c|c|c|c}
+\hline
+BX & B & C &\\
+\hline
+DX & D & E &\\
+\hline
+FX & G & H &\\
+\hline
+Z & X & Y & Designated for most 16 bit use, such as storing adresses to memory locations\\
+\hline
+ & -- & -- & Possible future use\\
+\hline
+ & \multicolumn{2}{c|}{Stack Pointer} &\\
+\hline
+& \multicolumn{2}{c|}{Program Counter} &\\
+\hline
+& Flag & -- &\\
+\hline
+\end{tabular}
+
+All values given are the hexadecimal values, but can be provided in any of the accepted formats
+
+A is the accumulator
+
+\subsection{Data Transfer}
+\subsubsection{\texttt{MOV}}
+
+
+
+
+\end{document}
