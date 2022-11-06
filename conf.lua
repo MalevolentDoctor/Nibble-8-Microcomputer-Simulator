@@ -4,4 +4,5 @@ function love.conf(t)
 	t.window.width = 1280;
 	t.console = false;
 	t.window.msaa = 0;
+	t.window.vsync = false;
 end

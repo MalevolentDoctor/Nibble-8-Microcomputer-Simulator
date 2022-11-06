@@ -1,5 +1,3 @@
----@diagnostic disable: lowercase-global
-
 Button = {
 	buttons = {},
 	flags = {visible = true}

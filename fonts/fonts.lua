@@ -13,9 +13,9 @@ Font = {
 		["dos16_2"] = love.graphics.newFont("fonts/fnt_ModernDOS8x16.ttf", 32),
 		["dos16_3"] = love.graphics.newFont("fonts/fnt_ModernDOS8x16.ttf", 48),
 
-		["nokia_1"] = love.graphics.newFont("fonts/fnt_nokia.ttf", 8),
-		["nokia_2"] = love.graphics.newFont("fonts/fnt_nokia.ttf", 16),
-		["nokia_3"] = love.graphics.newFont("fonts/fnt_nokia.ttf", 24),
+		["nokia_1"] = love.graphics.newFont("fonts/8x8pixelFont.ttf", 8),
+		["nokia_2"] = love.graphics.newFont("fonts/8x8pixelFont.ttf", 16),
+		["nokia_3"] = love.graphics.newFont("fonts/8x8pixelFont.ttf", 24),
 
 		["start_1"] = love.graphics.newFont("fonts/fnt_pressStart.ttf", 8),
 		["start_2"] = love.graphics.newFont("fonts/fnt_pressStart.ttf", 16),

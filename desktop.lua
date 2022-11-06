@@ -1,6 +1,4 @@
-Desktop = {
-
-};
+Desktop = {};
 
 function Desktop:new()
     setmetatable({}, Desktop)
@@ -30,12 +28,13 @@ function Desktop:new()
     )
     self.btn_editor = Button.new(self.spr_editor_icon, self.openEditor, self)
 
-    self.spr_microcontroller_icon = Sprite.new( -- microcontroller icon
+    self.spr_microcomputer_icon = Sprite.new( -- microcontroller icon
         130, self.header_height + 10, 2, 2, 
         {"assets/png/microcontroller.png", "assets/png/microcontroller_hover.png"},
-        {hover = true}
+        {hover = true, visible = false}
     )
-    
+    self.btn_mc = Button.new(self.spr_microcomputer_icon, self.openMicrocomputer, self)
+
     self.spr_file_icon = Sprite.new( -- file icon
         250, self.header_height + 10, 2, 2,
         {"assets/png/file.png", "assets/png/file_hover.png"},
@@ -46,6 +45,8 @@ function Desktop:new()
     love.mouse.setCursor(self.cursor);
 
     self.obj_editor = {};
+    self.obj_mcomputer = {};
+    self.obj_mcontroller = {};
 
     return self
 end
@@ -73,6 +74,8 @@ function Desktop:update()
 
     if self.obj_editor.active == true then
         self.obj_editor:update();
+    elseif self.obj_mcomputer.active == true then
+        self.obj_mcomputer:update();
     else
         self.active = true;
     end
@@ -116,6 +119,10 @@ function Desktop:draw()
         self.obj_editor:draw()
     end
 
+    if self.obj_mcomputer.active == true then
+        self.obj_mcomputer:draw()
+    end
+
 end
 
 function Desktop:openEditor()
@@ -130,4 +137,11 @@ function Desktop:openEditor()
         self.active = false
         self.spr_editor_icon.i = 1;
     end
+end
+
+function Desktop:openMicrocomputer()
+    self.obj_mcontroller = Microcontroller.new(9, 10, 10, 2)
+    self.obj_mcomputer = Microcomputer.new(self.obj_mcontroller)
+    self.active = false;
+    self.spr_microcomputer_icon.i = 1;
 end

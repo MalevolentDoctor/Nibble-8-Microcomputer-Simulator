@@ -9,6 +9,7 @@ function love.load()
 	ObjDesktop = Desktop:new();
 	--ObjPIC8 = Micro:new(4, 1, 8, 32);
 	--ObjEditor = TextEditor:new(0, 0, 1280, 720, 20, "edit");
+	love.graphics.default_font = love.graphics.getFont();
 end
 
 
@@ -19,9 +20,14 @@ end
 
 
 function love.draw()
+	local window_width, window_height = love.window.getMode()
 	-- ObjEditor:draw();
 	ObjDesktop:draw();
-	--Font:demo()
+	-- Font:demo()
+
+	-- debug stuff
+	love.graphics.setFont(love.graphics.default_font)
+	love.graphics.print("Current FPS: "..tostring(love.timer.getFPS( )), window_width - 110, window_height - 20)
 end
 
 function love.keypressed(key)

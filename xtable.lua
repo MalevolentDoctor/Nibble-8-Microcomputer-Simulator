@@ -94,4 +94,18 @@ function table.subtable(tab, start, fin)
     return new_table
 end
 
+function table.copy(tab)
+    local new_table = {}
+    for i,v in pairs(tab) do
+        if type(v) == "function" then
+            -- don't copy functions
+        elseif type(v) == "table" then
+            new_table[i] = table.copy(v)
+        else
+            new_table[i] = v
+        end
+    end
+    return new_table
+end
+
 end -- end do

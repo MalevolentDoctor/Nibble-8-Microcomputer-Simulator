@@ -1,0 +1,10 @@
+{
+	"Lua.runtime.version": "LuaJIT",
+	"Lua.workspace.library": [
+		"${3rd}/love2d/library"
+	],
+	"Lua.diagnostics.disable": [
+		"param-type-mismatch"
+	],
+	"Lua.workspace.checkThirdParty": false
+}
