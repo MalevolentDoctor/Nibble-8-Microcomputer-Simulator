@@ -55,9 +55,11 @@ Editor = {
         }
     }
 };
+Editor.__index = Editor
 
-function Editor:new(x, y, width, height, mode)
-    setmetatable({}, Editor)
+function Editor.new(x, y, width, height, mode)
+    local self = {}
+    setmetatable(self, Editor)
 
     -- Configuration
     self.x = x;                     -- x position of the top left of the editor window
@@ -69,10 +71,8 @@ function Editor:new(x, y, width, height, mode)
     self.mode = mode;               -- mode of the editor ("edit"/"console")
 
     -- Font
-    self.text_font_size = 1;             -- size of font in editor/console
-    self.font_name = "dos14";       -- name of font used in editor/console
-    self.ui_font_size = 1;          -- size of font used in editor UI
-    self.ui_font_name = "dos16";    -- name of font used in editor UI
+    self.text_font = Font.fonts["nokia_mod"];   -- font (type) used in editor/console
+    self.ui_font = Font.fonts["dos16"];         -- font (type) used in editor UI
 
     -- file
     self.saved = true;              -- whether or not the current file is saved
@@ -103,12 +103,10 @@ function Editor:new(x, y, width, height, mode)
     self.console_horz_cursor = 1;   -- horizontal position of the cursor in the console
 
     -- Calculated values
-    self.text_font = Font.fonts[self.font_name .. "_" .. self.text_font_size];      -- font (type) used in editor/console
-    self.text_font_height = self.text_font:getHeight();                       -- height of font used in the editor/console
-    self.text_font_width = self.text_font:getWidth("a");                      -- width (assuming monospaced) of the font used in editor/console
-    self.text_y_spacing = self.text_font_height + 2;                          -- vertical spacing between rows of text (font height + 2)
+    self.fnt_text_height = self.text_font:getHeight();                       -- height of font used in the editor/console
+    self.fnt_text_width = self.text_font:getWidth("a");                      -- width (assuming monospaced) of the font used in editor/console
+    self.text_y_spacing = self.fnt_text_height + 2;                          -- vertical spacing between rows of text (font height + 2)
 
-    self.ui_font = Font.fonts[self.ui_font_name .. "_" .. self.ui_font_size];   -- font (type) used in editor UI
     self.ui_font_height = self.ui_font:getHeight();                     -- height of font used in the editor UI
     self.ui_font_width = self.ui_font:getWidth("a");                    -- width (assuming monospaced) of the font used in the editor UI
 
@@ -198,17 +196,19 @@ function Editor:draw()
 
         love.graphics.setColor(1,1,1,1);
 
-        local editor_cursor_x = self.editor_text_x_offset + (self.editor_horz_cursor + self.max_line_num_buffer)*self.text_font_width;
+        local editor_cursor_x = self.editor_text_x_offset + (self.editor_horz_cursor + self.max_line_num_buffer)*self.fnt_text_width;
         local editor_cursor_y = self.editor_text_y_offset + (self.editor_vert_cursor - self.editor_top_line)*self.text_y_spacing;
-        local console_cursor_x = self.console_text_x_offset + (self.console_horz_cursor + 3)*self.text_font_width;
+        local console_cursor_x = self.console_text_x_offset + (self.console_horz_cursor + 3)*self.fnt_text_width;
         local console_cursor_y = self.console_text_y_offset + (self.console_vert_cursor - self.console_top_line)*self.text_y_spacing;
 
         -- draw editor text
+        love.graphics.setFont(self.text_font)
+
         if self.mode == "edit" then love.graphics.setColor(1, 1, 1, 1) else love.graphics.setColor(0.5, 0.5, 0.5, 1) end
         for i = self.editor_top_line, self.editor_bottom_line + 1 do
             if self.editor_text[i] ~= nil then
                 local line_num_buffer = string.rep(" ", self.max_line_num_buffer - string.len(tostring(i)) - 1)
-                love.graphics.print(line_num_buffer .. tostring(i) .. "  " .. self.editor_text[i], self.text_font, self.editor_text_x_offset, self.editor_text_y_offset + self.text_y_spacing*(i - self.editor_top_line))
+                love.graphics.print(line_num_buffer .. tostring(i) .. "  " .. self.editor_text[i], self.editor_text_x_offset, self.editor_text_y_offset + self.text_y_spacing*(i - self.editor_top_line))
             end
         end
 
@@ -217,9 +217,9 @@ function Editor:draw()
         for i = self.console_top_line, self.console_bottom_line do
             if self.console_text[i] ~= nil then
                 if self.console_text[i]:sub(1,2) == "<<" then 
-                    love.graphics.print("      " .. self.console_text[i]:sub(3,-1), self.text_font, self.console_text_x_offset, self.console_text_y_offset + self.text_y_spacing*(i - self.console_top_line))
+                    love.graphics.print("      " .. self.console_text[i]:sub(3,-1), self.console_text_x_offset, self.console_text_y_offset + self.text_y_spacing*(i - self.console_top_line))
                 else
-                    love.graphics.print(">>  " .. self.console_text[i], self.text_font, self.console_text_x_offset, self.console_text_y_offset + self.text_y_spacing*(i - self.console_top_line))
+                    love.graphics.print(">>  " .. self.console_text[i], self.console_text_x_offset, self.console_text_y_offset + self.text_y_spacing*(i - self.console_top_line))
                 end
             end
         end
@@ -227,22 +227,23 @@ function Editor:draw()
         -- draw cursor
         love.graphics.setColor(1,1,1,0.5);
         if self.mode == "edit" then
-            love.graphics.rectangle("fill", editor_cursor_x, editor_cursor_y, self.text_font_width, self.text_font_height)
+            love.graphics.rectangle("fill", editor_cursor_x, editor_cursor_y, self.fnt_text_width, self.fnt_text_height)
         elseif self.mode == "console" and self.console_vert_cursor <= self.console_bottom_line then
-            love.graphics.rectangle("fill", console_cursor_x, console_cursor_y, self.text_font_width, self.text_font_height)
+            love.graphics.rectangle("fill", console_cursor_x, console_cursor_y, self.fnt_text_width, self.fnt_text_height)
         end
 
         -- draw headers
         love.graphics.setColor(0.7,0.7,0.7,1);
+        love.graphics.setFont(self.ui_font)
         local name_offset = self.ui_font_width * 6 + 32;
-        love.graphics.print("EDITOR", self.ui_font, inner_x, inner_y + self.editor_header_buffer/2 - self.ui_font_height/2)
-        love.graphics.print("CONSOLE", self.ui_font, inner_x, self.console_y + self.console_header_buffer/2 - self.ui_font_height/2 + 1)
+        love.graphics.print("EDITOR", inner_x, inner_y + self.editor_header_buffer/2 - self.ui_font_height/2)
+        love.graphics.print("CONSOLE", inner_x, self.console_y + self.console_header_buffer/2 - self.ui_font_height/2 + 1)
 
         -- file name
         if self.saved then
-            love.graphics.print(self.file_name, self.ui_font, inner_x + name_offset, inner_y + self.editor_header_buffer/2 - self.ui_font_height/2)
+            love.graphics.print(self.file_name, inner_x + name_offset, inner_y + self.editor_header_buffer/2 - self.ui_font_height/2)
         else
-            love.graphics.print("*" .. self.file_name, self.ui_font, inner_x + name_offset, inner_y + self.editor_header_buffer/2 - self.ui_font_height/2)
+            love.graphics.print("*" .. self.file_name, inner_x + name_offset, inner_y + self.editor_header_buffer/2 - self.ui_font_height/2)
         end
 
         -- header divider    
@@ -461,8 +462,8 @@ do -- CONSOLE COMMANDS
     function Editor:consoleHelp(command)
         if command[2] == nil then -- print summary of commands
             self:consolePrint("     -- Summary of Commands --")
-            for _,v in ipairs(self.help_text.help_list) do
-                self:consolePrint(self.help_text[v][1])
+            for _,v in ipairs(Editor.help_text.help_list) do
+                self:consolePrint(Editor.help_text[v][1])
             end
             self:consolePrint("")
             self:consolePrint("     -- Controls --")
@@ -471,8 +472,8 @@ do -- CONSOLE COMMANDS
             self:consolePrint("ctrl + arrow keys    scroll console")
             self:consolePrint("")
             self:consolePrint("use `help <command>' to see more details")
-        elseif self.help_text[command[2]] ~= nil and command[2] ~= "help_list" then
-            self:consolePrint(table.subtable(self.help_text[command[2]], 2, -1))
+        elseif Editor.help_text[command[2]] ~= nil and command[2] ~= "help_list" then
+            self:consolePrint(table.subtable(Editor.help_text[command[2]], 2, -1))
         else
         end
     end
@@ -718,9 +719,9 @@ do -- EDITOR FUNCIONS [setFont, setMode, refresh, thisLineLen]
     --upodate all the calculated parameters with new set values
     function Editor:refresh()
         -- Update font values
-        self.text_font_height = self.text_font:getHeight();
-        self.text_font_width = self.text_font:getWidth("a"); -- assume monospaced
-        self.text_y_spacing = self.text_font_height + 2;
+        self.fnt_text_height = self.text_font:getHeight();
+        self.fnt_text_width = self.text_font:getWidth("a"); -- assume monospaced
+        self.text_y_spacing = self.fnt_text_height + 2;
 
         self.ui_font_height = self.ui_font:getHeight();
         self.ui_font_width = self.ui_font:getWidth("a"); -- assume monospaced

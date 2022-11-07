@@ -1,7 +1,5 @@
-Microcontroller = {
-	opcode = {mov = "000000", add = "000001", adi = "000010", clr = "000011"},
-	reg_alpha = {A = "0000", B = "0001", C = "0010", D = "0011", E = "0100", G = "0101", H = "0110", X = "0111", Y = "1000"}
-}
+Microcontroller = {}
+Microcontroller.__index = Microcontroller
 -- 8 bit opcode, 4-16 bit args (up to a total of 16 bits)
 -- 16 bit opcodes
 -- 1 working register, 1 instruction pointer, 1 flag register
@@ -11,9 +9,11 @@ Microcontroller = {
 -- byte addressable (not individual bits)
 
 function Microcontroller.new(reg_size, sram_size, flash_size, io_size)
-	-- obj = {};
-	obj = table.copy(Microcontroller) -- get the fixed values
-	setmetatable(obj, Microcontroller)
+	local self = {}
+	setmetatable(self, Microcontroller)
+
+	self.opcode = {mov = "000000", add = "000001", adi = "000010", clr = "000011"}
+	self.reg_alpha = {A = "0000", B = "0001", C = "0010", D = "0011", E = "0100", G = "0101", H = "0110", X = "0111", Y = "1000"}
 
 	-- checking provided params
 	if (reg_size > 16) then
@@ -22,50 +22,50 @@ function Microcontroller.new(reg_size, sram_size, flash_size, io_size)
 		reg_size = 1;
 	end
 
-	obj.reg_size = reg_size;
-	obj.sram_size = sram_size;
-	obj.flash_size = flash_size;
+	self.reg_size = reg_size;
+	self.sram_size = sram_size;
+	self.flash_size = flash_size;
 
 	--initialise general registers (8 bit chucks)
-	obj.registers = {}
+	self.registers = {}
 	for i = 0,(reg_size - 1) do
 		local reg_label = numbers.toBin(i, 4)
-		if reg_label ~= nil then obj.registers[reg_label] = "00000000"; end
+		if reg_label ~= nil then self.registers[reg_label] = "00000000"; end
 	end
 
 	--initialise sram (8 bit chunks)
-	obj.sram = {};
+	self.sram = {};
 	for i = 0,(sram_size - 1) do
-		obj.sram[i] = "00000000";
+		self.sram[i] = "00000000";
 	end
 
 	--initialise flash (8 bit chunks)
-	obj.flash = {};
+	self.flash = {};
 	for i = 0,(flash_size - 1) do
-		obj.flash[i] = "00000000";
+		self.flash[i] = "00000000";
 	end
 
-	obj.io = {}
+	self.io = {}
 	for i = 0,(io_size - 1) do
-		obj.io[i] = "00000000";
+		self.io[i] = "00000000";
 	end
 
 	--initialise flag register
-	obj.flag = {};
+	self.flag = {};
 	for i = 0,7 do
-		obj.flag[i] = "0";
+		self.flag[i] = "0";
 	end
 
 	-- initialise intruction pointer register
-	obj.instruction = {};
+	self.instruction = {};
 	for i = 1,8 do
-		obj.instruction[i] = "0";
+		self.instruction[i] = "0";
 	end
 
-	obj.instruction_pointer = "0000000000000000";
-	obj.stack_pointer = "0000000000000000";
+	self.instruction_pointer = "0000000000000000";
+	self.stack_pointer = "0000000000000000";
 
-	return obj
+	return self
 end
 
 function Microcontroller:loadProgram()
@@ -81,7 +81,7 @@ end
 function Microcontroller:startProgram()
 end
 
-function Microcontroller:cycle(dt)
+function Microcontroller:update(dt)
 	-- read the instruction in the flash at the pointer
 
 	-- interpret the instruction
