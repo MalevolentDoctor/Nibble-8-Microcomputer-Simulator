@@ -1,6 +1,9 @@
-
 archive
 assets/psd
+assets/aseprite
+assets/fonts
 programfiles
 *.bat
 *.zip
+*.m
+.vscode
