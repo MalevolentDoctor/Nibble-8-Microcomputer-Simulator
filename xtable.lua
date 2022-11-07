@@ -75,10 +75,25 @@ function table.text_load(fname)
 end
 
 function table.join(tab, sep, start, fin)
+    if start == nil then
+        start = 1
+        fin = -1
+    end
+
+    if fin < 0 then
+        fin = #tab + fin + 1;
+    end
+    
     local str = ""
     for i = start,(fin - 1) do
-        str = tab[i - start + 1] .. sep
+        local val = tab[i - start + 1]
+        if val ~= nil then
+            str = str .. val .. sep
+        else
+            return str
+        end
     end
+
     return str .. tab[fin]
 end
 
