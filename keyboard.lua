@@ -204,17 +204,3 @@ function keyboard:getFunKey()
 
 	return key
 end
-
-mouse = {
-	current_key = nil,
-	x = 0,
-	y = 0,
-}
-
-function mouse.reset()
-	mouse.current_key = nil;
-end
-
-function mouse.getKey()
-	return mouse.x, mouse.y, mouse.current_key
-end
