@@ -139,7 +139,7 @@ function Desktop:openEditor()
 end
 
 function Desktop:openMicrocomputer()
-    self.obj_mcontroller = Microcontroller.new(9, 10, 10, 2)
+    self.obj_mcontroller = Microcontroller.new(9, 65536, 10, 2)
     self.obj_mcomputer = Microcomputer.new(self.obj_mcontroller)
     self.active = false;
     self.spr_microcomputer_icon.i = 1;

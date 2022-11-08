@@ -25,6 +25,7 @@ function Microcontroller.new(reg_size, sram_size, flash_size, io_size)
 	self.reg_size = reg_size;
 	self.sram_size = sram_size;
 	self.flash_size = flash_size;
+	self.io_size = io_size;
 
 	--initialise general registers (8 bit chucks)
 	self.registers = {}
@@ -36,7 +37,14 @@ function Microcontroller.new(reg_size, sram_size, flash_size, io_size)
 	--initialise sram (8 bit chunks)
 	self.sram = {};
 	for i = 0,(sram_size - 1) do
-		self.sram[i] = "00000000";
+		-- test values
+		local str = ""
+		for _ = 1,8 do
+			str = str .. tostring(math.random(0,1))
+		end
+		self.sram[i] = str
+		-- real initialiser
+		-- self.sram[i] = "00000000";
 	end
 
 	--initialise flash (8 bit chunks)

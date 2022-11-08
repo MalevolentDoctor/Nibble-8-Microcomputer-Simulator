@@ -1,5 +1,6 @@
 require("init")
 
+
 function love.load()
 	App.init()
 	Font.init()
@@ -13,14 +14,11 @@ function love.load()
 	love.graphics.default_font = love.graphics.getFont();
 end
 
-
-
 function love.update(dt)
 	-- ObjEditor:update();
 	
 	Desktop:update()
 end
-
 
 function love.draw()
 	local window_width, window_height = love.window.getMode()
