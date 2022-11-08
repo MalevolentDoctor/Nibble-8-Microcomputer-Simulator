@@ -19,6 +19,14 @@ function Font.init()
 	end
 end
 
+-- returns the font, its width and its height
+function Font.getFont(name)
+	local fnt = Font.fonts[name]
+	local w = fnt:getWidth("A")
+	local h = fnt:getHeight()
+	return fnt, w, h
+end
+
 function Font:demo()
 	local y = 5;
 	local x = 5;
