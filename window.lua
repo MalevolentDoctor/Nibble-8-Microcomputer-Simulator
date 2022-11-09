@@ -88,6 +88,7 @@ end
 function Window:printText(text, font, x)
     love.graphics.setFont(font)
     x = x or self.x_int
+    love.graphics.setColor(1,1,1,1) -- set colour to white to avoid tinting
     love.graphics.print(text, x, self.current_y)
     self.current_y = self.current_y + font:getHeight()
 end
@@ -114,6 +115,7 @@ function Window:drawTitle(text, background)
         love.graphics.rectangle("fill", self.x_ext, self.y_ext, self.w_ext, self.hdr_h)
     end
     love.graphics.setFont(self.fnt_hdr)
+    love.graphics.setColor(1,1,1,1) -- reset colour to white to avoid tinting
     love.graphics.print(text, self.x_int, self.current_y + self.border)
     self.current_y = self.current_y + self.hdr_y_offset
 end
