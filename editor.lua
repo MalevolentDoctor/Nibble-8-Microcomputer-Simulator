@@ -71,7 +71,7 @@ function Editor.new(x, y, width, height, mode)
     self.mode = mode;               -- mode of the editor ("edit"/"console")
 
     -- Font
-    self.text_font = Font.fonts["nokia_mod"];   -- font (type) used in editor/console
+    self.text_font = Font.fonts["pxl_5x7_thin"];   -- font (type) used in editor/console
     self.ui_font = Font.fonts["dos16"];         -- font (type) used in editor UI
 
     -- file
