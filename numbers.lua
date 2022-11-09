@@ -346,7 +346,7 @@ end
 -- or appending zeros, oversize set to 'true' if trimming down required
 function numbers.setBits(num, bits)
     if num == nil then return nil, nil end
-
+    print("set bits", string.len(num))
     local oversize = false;
     if string.len(num) > bits then
         oversize = true;
@@ -364,10 +364,12 @@ end
 -- number is in the format "0f4h" (binary (b), octonal (o), decimal (d) or hexadecimal (h))
 -- binary value returned with the specified number of bits and no suffix 
 function numbers.toBin(num, bits)
+    bits = bits or 8 -- default number of bits to 8
+
     local outnum, oversize;
     if type(num) == "number" then
         outnum, oversize = numbers.setBits(numbers.decToBin(num), bits)
-    elseif type(num) == string then
+    elseif type(num) == "string" then
 
         local num_type = string.sub(num, -1, -1);
         local num_val = string.sub(num, 1, -2);
