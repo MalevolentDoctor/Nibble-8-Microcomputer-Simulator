@@ -346,7 +346,6 @@ end
 -- or appending zeros, oversize set to 'true' if trimming down required
 function numbers.setBits(num, bits)
     if num == nil then return nil, nil end
-    print("set bits", string.len(num))
     local oversize = false;
     if string.len(num) > bits then
         oversize = true;
