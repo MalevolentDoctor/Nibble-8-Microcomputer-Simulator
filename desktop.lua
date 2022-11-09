@@ -9,9 +9,9 @@ function Desktop:new()
     self.active = true;
 
     -- Colours
-    self.bg_col = colour.hex("1B1026");
-    self.header_col = colour.hex("1F1B24");
-    self.header_text_col = colour.hex("B5A8C6");
+    self.bg_col = Colour.hex("1B1026");
+    self.header_col = Colour.hex("1F1B24");
+    self.header_text_col = Colour.hex("B5A8C6");
 
     -- Calculated values
     
