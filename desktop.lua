@@ -40,6 +40,12 @@ function Desktop:new()
         {hover = true}
     )
 
+    self.spr_console_icon = Sprite.new( -- file icon
+        185, self.header_height + 10, 1, 1,
+        {"assets/png/console.png", "assets/png/console_hover.png"},
+        {hover = true}
+    )
+
     --self.cursor = love.mouse.newCursor("assets/png/cursor.png", 10, 10);
     --love.mouse.setCursor(self.cursor);
 
@@ -100,6 +106,7 @@ function Desktop:draw()
     love.graphics.print("Nibble-8", 5, self.header_border)
 
     -- sprites
+    love.graphics.setColor(1,1,1)
     for _,v in pairs(Sprite.sprites) do
         if v.flags.visible then
             Sprite.draw(v)
@@ -139,8 +146,14 @@ function Desktop:openEditor()
 end
 
 function Desktop:openMicrocomputer()
-    self.obj_mcontroller = Microcontroller.new(9, 65536, 10, 2)
-    self.obj_mcomputer = Microcomputer.new(self.obj_mcontroller)
-    self.active = false;
-    self.spr_microcomputer_icon.i = 1;
+    if self.obj_mcomputer.active == nil then
+        self.obj_mcontroller = Microcontroller.new(9, 65536, 10, 2)
+        self.obj_mcomputer = Microcomputer.new(self.obj_mcontroller)
+        self.active = false
+        self.spr_microcomputer_icon.i = 1
+    elseif self.obj_mcomputer.active == false then
+        self.obj_mcomputer.active = true
+        self.active = false
+        self.spr_microcomputer_icon.i = 1
+    end
 end

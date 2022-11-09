@@ -149,32 +149,40 @@ function Microcomputer.new(microcontroller)
 end
 
 function Microcomputer:update()
-    local nav_key = keyboard:getNavKey();
+    if self.active then
+        local nav_key = keyboard:getNavKey()
+        local edit_key = keyboard:getEditKey()
 
-    if nav_key == "pagedown" then
-        self.ram_win.row_offset = math.min(math.ceil(self.obj_mc.sram_size/self.ram_win.vals_in_row) - self.ram_win.window_rows, self.ram_win.row_offset + self.ram_win.window_rows - 1);
-        self.ram_win.char_offset = self.ram_win.row_offset*self.ram_win.vals_in_row;
-    elseif nav_key == "pageup" then
-        self.ram_win.row_offset = math.max(0, self.ram_win.row_offset - self.ram_win.window_rows + 1);
-        self.ram_win.char_offset = self.ram_win.row_offset*self.ram_win.vals_in_row;
+        if nav_key == "pagedown" then
+            self.ram_win.row_offset = math.min(math.ceil(self.obj_mc.sram_size/self.ram_win.vals_in_row) - self.ram_win.window_rows, self.ram_win.row_offset + self.ram_win.window_rows - 1);
+            self.ram_win.char_offset = self.ram_win.row_offset*self.ram_win.vals_in_row;
+        elseif nav_key == "pageup" then
+            self.ram_win.row_offset = math.max(0, self.ram_win.row_offset - self.ram_win.window_rows + 1);
+            self.ram_win.char_offset = self.ram_win.row_offset*self.ram_win.vals_in_row;
+        end
+
+        if edit_key == "backspace" then
+            self.active = false
+        end
+
+        keyboard:reset()
     end
-
-    keyboard:reset()
 end
 
 function Microcomputer:draw()
-    local window_width, window_height = App.getWindowSize()
-    love.graphics.setFont(self.fnt_text)
+    if self.active then
+        local window_width, window_height = App.getWindowSize()
+        love.graphics.setFont(self.fnt_text)
 
-    -- background
-    love.graphics.setColor(self.col_bg);
-    love.graphics.rectangle("fill", 0, 0, window_width, window_height)
+        -- background
+        love.graphics.setColor(self.col_bg);
+        love.graphics.rectangle("fill", 0, 0, window_width, window_height)
 
-    -- windows
-    self.reg_win:draw()
-    self.ram_win:draw()
-    self:drawMicroprocessor()
-
+        -- windows
+        self.reg_win:draw()
+        self.ram_win:draw()
+        self:drawMicroprocessor()
+    end
 end
 
 function Microcomputer:drawMC()
