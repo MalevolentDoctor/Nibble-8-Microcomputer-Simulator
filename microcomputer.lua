@@ -159,14 +159,6 @@ function Microcomputer:update()
         self.ram_win.char_offset = self.ram_win.row_offset*self.ram_win.vals_in_row;
     end
 
-    for i = 1,1000 do
-        local a = bit.tohex(i,4)
-        local b = bit.tohex(i*2,4)
-        local c = a .. b .. 'h'
-        local d = numbers.toBin(c, 16)
-        print(d)
-    end
-
     keyboard:reset()
 end
 
