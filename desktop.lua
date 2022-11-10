@@ -43,8 +43,9 @@ function Desktop:new()
     self.spr_console_icon = Sprite.new( -- file icon
         185, self.header_height + 10, 1, 1,
         {"assets/png/console.png", "assets/png/console_hover.png"},
-        {hover = true}
+        {hover = true, visible = false}
     )
+    self.btn_console = Button.new(self.spr_console_icon, self.openConsole, self)
 
     --self.cursor = love.mouse.newCursor("assets/png/cursor.png", 10, 10);
     --love.mouse.setCursor(self.cursor);
@@ -52,6 +53,9 @@ function Desktop:new()
     self.obj_editor = {};
     self.obj_mcomputer = {};
     self.obj_mcontroller = {};
+    self.obj_console = {}
+
+    self.applications = {obj_editor = {}, obj_mcomputer = {}, obj_mcontroller = {}, obj_console = {}}
 
     return self
 end
@@ -76,10 +80,12 @@ function Desktop:update()
         end
     end
 
-    if self.obj_editor.active == true then
+    if self.obj_editor.active then
         self.obj_editor:update();
-    elseif self.obj_mcomputer.active == true then
+    elseif self.obj_mcomputer.active then
         self.obj_mcomputer:update();
+    elseif self.obj_console.active then
+        self.obj_console:update()
     else
         self.active = true;
     end
@@ -120,13 +126,23 @@ function Desktop:draw()
         end
     end
 
-
+    -- drawing applications
+    -- for app,_ in pairs(self.applications) do
+    --     if self.applications[app].active then
+    --         self.applications[app]:draw()
+    --     end
+    -- end
+    
     if self.obj_editor.active == true then
         self.obj_editor:draw()
     end
 
     if self.obj_mcomputer.active == true then
         self.obj_mcomputer:draw()
+    end
+
+    if self.obj_console.active == true then
+        self.obj_console:draw()
     end
 
 end
@@ -155,5 +171,17 @@ function Desktop:openMicrocomputer()
         self.obj_mcomputer.active = true
         self.active = false
         self.spr_microcomputer_icon.i = 1
+    end
+end
+
+function Desktop:openConsole()
+    if self.obj_console.active == nil then
+        self.obj_console = Console.new()
+        self.active = false
+        self.spr_console_icon.i = 1
+    elseif self.obj_console.active == false then
+        self.obj_console.active = true
+        self.active = false
+        self.spr_console_icon.i = 1
     end
 end
