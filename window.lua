@@ -124,9 +124,6 @@ function Window:resetCurrentY()
     self.current_y = self.reset_y
 end
 
-function Window:draw()
-end
-
 function Window:getHeight()
     local parent_canvas = love.graphics.getCanvas()
     local temp_canvas = love.graphics.newCanvas(1,1)
