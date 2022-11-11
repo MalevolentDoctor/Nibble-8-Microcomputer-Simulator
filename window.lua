@@ -20,6 +20,7 @@ function Window.new(x, y, w, h, r, exbuff, inbuff, bdr, fonts, colours)
     self.int_buffer = inbuff or 0
 
     self.border = bdr or 0
+    self.line_spacing = 1;
 
     -- fonts {1: header, 2: text 1, 3 text 2, ...}
     self.fnt_hdr, self.fnt_hdr_w, self.fnt_hdr_h = Font.getFont(fonts[1])
@@ -90,7 +91,7 @@ function Window:printText(text, font, x)
     x = x or self.x_int
     love.graphics.setColor(1,1,1,1) -- set colour to white to avoid tinting
     love.graphics.print(text, x, self.current_y)
-    self.current_y = self.current_y + font:getHeight()
+    self.current_y = self.current_y + font:getHeight() + self.line_spacing
 end
 
 -- adds a vertical space
