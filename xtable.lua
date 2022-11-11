@@ -54,21 +54,28 @@ function table.text_save(tbl, fname)
 end
 
 -- Load standard text format
-function table.text_load(fname)
+function table.textLoad(fname)
     local f_info = {};
+    print(fname)
     f_info = love.filesystem.getInfo(fname, f_info)
+    if f_info ~= nil then
+        if f_info.type == "file" then -- file exists, so we can try to read from it
+            local tbl = {n = 0}
 
-    if f_info.type == "file" then -- file exists, so we can try to read from it
-        local tbl = {n = 0}
+            for line in love.filesystem.lines(fname) do
+                local str = line:gsub("\t", "    ") 	-- replace tab with 4 spaces
+                tbl.n = tbl.n + 1;						-- increment table index
+                tbl[tbl.n] = tostring(str)				-- add string to table
+            end
 
-        for line in love.filesystem.lines(fname) do
-            local str = line:gsub("\t", "    ") 	-- replace tab with 4 spaces
-            tbl.n = tbl.n + 1;						-- increment table index
-            tbl[tbl.n] = tostring(str)				-- add string to table
+            return tbl, nil
+        else
+            -- file does not exist but there may be a folder or something else of the same name
+            local err_msg = "Error: file '" .. fname .. "' does not exist"
+            return nil, err_msg
         end
-
-        return tbl, nil
     else
+        -- file does not exist
         local err_msg = "Error: file '" .. fname .. "' does not exist"
         return nil, err_msg
     end
