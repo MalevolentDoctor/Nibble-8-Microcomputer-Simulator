@@ -176,7 +176,7 @@ end
 
 function Desktop:openConsole()
     if self.obj_console.active == nil then
-        self.obj_console = Console.new()
+        self.obj_console = Console.new(self)
         self.active = false
         self.spr_console_icon.i = 1
     elseif self.obj_console.active == false then
