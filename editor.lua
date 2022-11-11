@@ -354,7 +354,7 @@ do -- CONSOLE COMMANDS
 
         if not command[2]:includes("%.") then fname = fname .. ".txt" end -- append extension if none provided
 
-        tab, state = table.text_load("editor/saves/" .. fname)
+        tab, state = table.textLoad("editor/saves/" .. fname)
         if state ~= nil then
             self:consoleError(state)
         else
@@ -742,5 +742,15 @@ do -- EDITOR FUNCIONS [setFont, setMode, refresh, thisLineLen]
     -- returns the length of the current line
     function Editor:thisLineLen()
         return self.editor_text[self.editor_vert_cursor]:len()
+    end
+
+    -- Resets the cursor and the scroll position and saved state
+    function Editor:reset()
+        self.saved = true;
+        self.editor_vert_cursor = 1;
+        self.editor_horz_cursor = 1;
+        self.editor_top_line = 1;
+        self.max_line_num_buffer = string.len(tostring(self.editor_text.n)) + 1;
+        self:updateEditorScrollPosition();
     end
 end
