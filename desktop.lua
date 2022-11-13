@@ -148,10 +148,8 @@ function Desktop:draw()
 end
 
 function Desktop:openEditor()
-    local window_width, window_height = App.getWindowSize()
-
     if self.obj_editor.active == nil then
-        self.obj_editor = Editor.new(0, 0, window_width, window_height, "console");
+        self.obj_editor = Editor.new(self);
         self.active = false;
         self.spr_editor_icon.i = 1;
     elseif self.obj_editor.active == false then
