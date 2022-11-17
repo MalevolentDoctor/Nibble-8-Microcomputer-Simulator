@@ -18,6 +18,19 @@ function Console.new(desktop)
 	self.file_text = {} -- locally stored text loaded from a file if editor is not running
 	self.local_load = false -- forces files to be loaded locally
 
+	-- Other
+    self.current_key = nil;         -- the current key that is pressed
+    self.active = true;             -- whether or not the console is active (visible)
+
+	-- Console
+    self.text = {n = 1, ""};                    -- table of text in the console
+    self.top_line = 1;                          -- top line visible in the console
+    self.command_buffer = {n = 0, i = 0};       -- table containing previously entered commands
+    self.command_buffer[0] = "";
+
+	self.vert_cursor = 1;   -- vertical position of the cursor in the console
+    self.horz_cursor = 1;   -- horizontal position of the cursor in the console
+
 	-- text to provide for the help command
 	self.help_text = {
         help_list = {"build", "clc", "close", "exit", "help", "load", "new", "save"},
@@ -83,18 +96,7 @@ function Console.new(desktop)
 	)
 	self.win:init()
 
-	-- Other
-    self.current_key = nil;         -- the current key that is pressed
-    self.active = true;             -- whether or not the console is active (visible)
-
-	-- Console
-    self.text = {n = 1, ""};                    -- table of text in the console
-    self.top_line = 1;                          -- top line visible in the console
-    self.command_buffer = {n = 0, i = 0};       -- table containing previously entered commands
-    self.command_buffer[0] = "";
-
-	self.vert_cursor = 1;   -- vertical position of the cursor in the console
-    self.horz_cursor = 1;   -- horizontal position of the cursor in the console
+	self.lines = math.floor((self.win.h_int - self.win.fnt_hdr_h)/(self.win.fnt_txt2_h + self.win.line_spacing)) - 1
 
 	function self.win:draw(console)
 		self:resetCurrentY()
@@ -114,10 +116,6 @@ function Console.new(desktop)
 			end
 		end
 	end
-
-	self.win:init()
-
-	self.lines = math.floor((self.win.h_int - self.win.fnt_hdr_h)/(self.win.fnt_txt2_h + self.win.line_spacing)) - 1
 
 	print("Created console successfully")
 	return self

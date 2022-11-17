@@ -1,60 +1,54 @@
 Desktop = {};
 
 function Desktop:new()
-    setmetatable({}, Desktop)
-
-    self.header_font = Font.fonts["dos16"];     -- font (type) used in desktop header
-    self.header_border = 2;
-    
+    setmetatable({}, Desktop)    
     self.active = true;
 
-    -- Colours
-    self.bg_col = Colour.hex("1B1026");
-    self.header_col = Colour.hex("1F1B24");
-    self.header_text_col = Colour.hex("B5A8C6");
+    self.win = Window.new(0, 0, App.window_width, App.window_width, 0, 0, 5, 0,
+	{"dos16", "pxl_5x7_bold", "pxl_5x7_thin"}, -- fonts
+	{{"1B1026", "1F1B24"}, {"000"}, {"B5A8C6", "ddd"}} -- colours
+	)
+	self.win:init()
 
-    -- Calculated values
-    
-    self.header_font_height = self.header_font:getHeight();                 -- height of font used in desktop header
-    self.header_font_width = self.header_font:getWidth("a");                -- width (assuming monospaced) of the font used in desktop header
-    self.header_height = self.header_font_height + 2*self.header_border;    -- height of the header bar
+	function self.win:draw(desktop)
+        self:resetCurrentY()
+        self:drawBackground()
+        self:drawTitle("Nibble-8", true)
+        self:hline(2)
+    end
 
-    -- images
+    do -- Load Sprites
     self.spr_editor_icon = Sprite.new( -- editor icon
-        5, self.header_height + 10, 1, 1, 
+        5, self.win.hdr_h + 10, 1, 1, 
         {"assets/png/editor.png", "assets/png/editor_hover.png"},
         {hover = true, visible = false}
     )
-    self.btn_editor = Button.new(self.spr_editor_icon, self.openEditor, self)
-
+    
     self.spr_microcomputer_icon = Sprite.new( -- microcontroller icon
-        65, self.header_height + 10, 1, 1, 
+        65, self.win.hdr_h + 10, 1, 1, 
         {"assets/png/microcontroller.png", "assets/png/microcontroller_hover.png"},
         {hover = true, visible = false}
     )
-    self.btn_mc = Button.new(self.spr_microcomputer_icon, self.openMicrocomputer, self)
+    
 
     self.spr_file_icon = Sprite.new( -- file icon
-        125, self.header_height + 10, 1, 1,
+        125, self.win.hdr_h + 10, 1, 1,
         {"assets/png/file.png", "assets/png/file_hover.png"},
         {hover = true}
     )
 
     self.spr_console_icon = Sprite.new( -- file icon
-        185, self.header_height + 10, 1, 1,
+        185, self.win.hdr_h + 10, 1, 1,
         {"assets/png/console.png", "assets/png/console_hover.png"},
         {hover = true, visible = false}
     )
+    end
+
+    self.btn_editor = Button.new(self.spr_editor_icon, self.openEditor, self)
+    self.btn_mc = Button.new(self.spr_microcomputer_icon, self.openMicrocomputer, self)
     self.btn_console = Button.new(self.spr_console_icon, self.openConsole, self)
 
-    --self.cursor = love.mouse.newCursor("assets/png/cursor.png", 10, 10);
-    --love.mouse.setCursor(self.cursor);
-
-    self.obj_editor = {};
-    self.obj_mcomputer = {};
-    self.obj_mcontroller = {};
-    self.obj_console = {}
-
+    -- table of applications running from the desktop
     self.applications = {obj_editor = {}, obj_mcomputer = {}, obj_mcontroller = {}, obj_console = {}}
 
     return self
@@ -80,13 +74,14 @@ function Desktop:update()
         end
     end
 
-    if self.obj_editor.active then
-        self.obj_editor:update();
-    elseif self.obj_mcomputer.active then
-        self.obj_mcomputer:update();
-    elseif self.obj_console.active then
-        self.obj_console:update()
-    else
+    local apps_active = 0;
+    for app,_ in pairs(self.applications) do
+        if self.applications[app].active then
+            self.applications[app]:update()
+            apps_active = apps_active + 1
+        end
+    end
+    if apps_active == 0 then
         self.active = true;
     end
 
@@ -94,22 +89,7 @@ function Desktop:update()
 end
 
 function Desktop:draw()
-    local window_width, window_height = App.getWindowSize()
-
-    -- background
-    love.graphics.setColor(self.bg_col);
-    love.graphics.rectangle("fill", 0, 0, window_width, window_height)
-
-    -- header
-    love.graphics.setColor(self.header_col);
-    love.graphics.rectangle("fill", 0, 0, window_width, self.header_height)
-
-    love.graphics.setColor(0,0,0,1); love.graphics.setLineWidth(2)
-    love.graphics.line(0, self.header_height, window_width, self.header_height);
-
-    love.graphics.setColor(self.header_text_col)
-    love.graphics.setFont(self.header_font)
-    love.graphics.print("Nibble-8", 5, self.header_border)
+    self.win:draw(self)
 
     -- sprites
     love.graphics.setColor(1,1,1)
@@ -127,60 +107,45 @@ function Desktop:draw()
     end
 
     -- drawing applications
-    -- for app,_ in pairs(self.applications) do
-    --     if self.applications[app].active then
-    --         self.applications[app]:draw()
-    --     end
-    -- end
-    
-    if self.obj_editor.active == true then
-        self.obj_editor:draw()
+    for app,_ in pairs(self.applications) do
+        if self.applications[app].active then
+            self.applications[app]:draw()
+        end
     end
-
-    if self.obj_mcomputer.active == true then
-        self.obj_mcomputer:draw()
-    end
-
-    if self.obj_console.active == true then
-        self.obj_console:draw()
-    end
-
 end
 
 function Desktop:openEditor()
-    local window_width, window_height = App.getWindowSize()
-
-    if self.obj_editor.active == nil then
-        self.obj_editor = Editor.new(0, 0, window_width, window_height, "console");
+    if self.applications.obj_editor.active == nil then
+        self.applications.obj_editor = Editor.new(self);
         self.active = false;
         self.spr_editor_icon.i = 1;
-    elseif self.obj_editor.active == false then
-        self.obj_editor.active = true;
+    elseif self.applications.obj_editor.active == false then
+        self.applications.obj_editor.active = true;
         self.active = false
         self.spr_editor_icon.i = 1;
     end
 end
 
 function Desktop:openMicrocomputer()
-    if self.obj_mcomputer.active == nil then
-        self.obj_mcontroller = Microcontroller.new(9, 65536, 10, 2)
-        self.obj_mcomputer = Microcomputer.new(self.obj_mcontroller)
+    if self.applications.obj_mcomputer.active == nil then
+        self.applications.obj_mcontroller = Microcontroller.new(9, 65536, 10, 2)
+        self.applications.obj_mcomputer = Microcomputer.new(self.applications.obj_mcontroller)
         self.active = false
         self.spr_microcomputer_icon.i = 1
-    elseif self.obj_mcomputer.active == false then
-        self.obj_mcomputer.active = true
+    elseif self.applications.obj_mcomputer.active == false then
+        self.applications.obj_mcomputer.active = true
         self.active = false
         self.spr_microcomputer_icon.i = 1
     end
 end
 
 function Desktop:openConsole()
-    if self.obj_console.active == nil then
-        self.obj_console = Console.new(self)
+    if self.applications.obj_console.active == nil then
+        self.applications.obj_console = Console.new(self)
         self.active = false
         self.spr_console_icon.i = 1
-    elseif self.obj_console.active == false then
-        self.obj_console.active = true
+    elseif self.applications.obj_console.active == false then
+        self.applications.obj_console.active = true
         self.active = false
         self.spr_console_icon.i = 1
     end
