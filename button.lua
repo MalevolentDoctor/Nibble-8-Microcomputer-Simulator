@@ -1,38 +1,36 @@
----@diagnostic disable: lowercase-global
-
 Button = {
-	buttons = {},
-	flags = {visible = true}
+	buttons = {}
 }
 Button.__index = Button
 
 function Button.new(sprite, to, parent, pos, size)
-	obj = {}
-	setmetatable(obj, Button)
+	local self = {}
+	self.flags = {visible = true}
+	setmetatable(self, Button)
 
-	obj.sprite = sprite;
-	obj.to = to;
-	obj.parent = parent;
+	self.sprite = sprite;
+	self.to = to;
+	self.parent = parent;
 
 	if pos == nil then
-		obj.x = sprite.x;
-		obj.y = sprite.y;
+		self.x = sprite.x;
+		self.y = sprite.y;
 	else
-		obj.x = pos[1];
-		obj.y = pos[2];
+		self.x = pos[1];
+		self.y = pos[2];
 	end
 
 	if size == nil then
-		obj.w = sprite.w*sprite.sx;
-		obj.h = sprite.h*sprite.sy;
+		self.w = sprite.w*sprite.sx;
+		self.h = sprite.h*sprite.sy;
 	else
-		obj.w = size[1];
-		obj.h = size[2];
+		self.w = size[1];
+		self.h = size[2];
 	end
 
-	table.insert(Button.buttons, obj);
+	table.insert(Button.buttons, self);
 	
-	return obj
+	return self
 end
 
 function Button:pressed()

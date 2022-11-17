@@ -2,9 +2,9 @@
 
 require("numbers")
 
-colour = {}
+Colour = {}
 
-function colour.hex(hex_string)
+function Colour.hex(hex_string)
 	local r, g, b, a;
 	if hex_string:len() == 6 then
 		r = numbers.hexToDec(hex_string:sub(1,2))/255;

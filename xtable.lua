@@ -6,7 +6,7 @@ function table.text_save(tbl, fname)
     -- creating it if it does not exist
     local f_info = {};
     local dir = fname:split("/")
-    local dir_str = table.join(dir, "/", 1, dir.n - 1)
+    local dir_str = table.concat(dir, "/", 1, dir.n - 1)
     f_info = love.filesystem.getInfo(dir_str, f_info)
     if f_info == nil then
         local ok = love.filesystem.createDirectory(dir_str)
@@ -54,32 +54,31 @@ function table.text_save(tbl, fname)
 end
 
 -- Load standard text format
-function table.text_load(fname)
+function table.textLoad(fname)
     local f_info = {};
+    print(fname)
     f_info = love.filesystem.getInfo(fname, f_info)
+    if f_info ~= nil then
+        if f_info.type == "file" then -- file exists, so we can try to read from it
+            local tbl = {n = 0}
 
-    if f_info.type == "file" then -- file exists, so we can try to read from it
-        local tbl = {n = 0}
+            for line in love.filesystem.lines(fname) do
+                local str = line:gsub("\t", "    ") 	-- replace tab with 4 spaces
+                tbl.n = tbl.n + 1;						-- increment table index
+                tbl[tbl.n] = tostring(str)				-- add string to table
+            end
 
-        for line in love.filesystem.lines(fname) do
-            local str = line:gsub("\t", "    ") 	-- replace tab with 4 spaces
-            tbl.n = tbl.n + 1;						-- increment table index
-            tbl[tbl.n] = tostring(str)				-- add string to table
+            return tbl, nil
+        else
+            -- file does not exist but there may be a folder or something else of the same name
+            local err_msg = "Error: file '" .. fname .. "' does not exist"
+            return nil, err_msg
         end
-
-        return tbl, nil
     else
+        -- file does not exist
         local err_msg = "Error: file '" .. fname .. "' does not exist"
         return nil, err_msg
     end
-end
-
-function table.join(tab, sep, start, fin)
-    local str = ""
-    for i = start,(fin - 1) do
-        str = tab[i - start + 1] .. sep
-    end
-    return str .. tab[fin]
 end
 
 function table.subtable(tab, start, fin)
@@ -90,6 +89,20 @@ function table.subtable(tab, start, fin)
 
     for i = start,fin do
         new_table[i] = tab[i];
+    end
+    return new_table
+end
+
+function table.copy(tab)
+    local new_table = {}
+    for i,v in pairs(tab) do
+        if type(v) == "function" then
+            -- don't copy functions
+        elseif type(v) == "table" then
+            new_table[i] = table.copy(v)
+        else
+            new_table[i] = v
+        end
     end
     return new_table
 end

@@ -1,6 +1,5 @@
-OP = {MOV = "000000", ADD = "000001", ADI = "000010", CLR = "000011"}
-
-Micro = {}
+Microcontroller = {}
+Microcontroller.__index = Microcontroller
 -- 8 bit opcode, 4-16 bit args (up to a total of 16 bits)
 -- 16 bit opcodes
 -- 1 working register, 1 instruction pointer, 1 flag register
@@ -9,8 +8,12 @@ Micro = {}
 -- have some way to characterise compute time
 -- byte addressable (not individual bits)
 
-function Micro:new(reg_size, sram_size, flash_size, io_size)
-	setmetatable({}, Micro)
+function Microcontroller.new(reg_size, sram_size, flash_size, io_size)
+	local self = {}
+	setmetatable(self, Microcontroller)
+
+	self.opcode = {mov = "000000", add = "000001", adi = "000010", clr = "000011"}
+	self.reg_alpha = {A = "0000", B = "0001", C = "0010", D = "0011", E = "0100", G = "0101", H = "0110", X = "0111", Y = "1000"}
 
 	-- checking provided params
 	if (reg_size > 16) then
@@ -22,6 +25,7 @@ function Micro:new(reg_size, sram_size, flash_size, io_size)
 	self.reg_size = reg_size;
 	self.sram_size = sram_size;
 	self.flash_size = flash_size;
+	self.io_size = io_size;
 
 	--initialise general registers (8 bit chucks)
 	self.registers = {}
@@ -33,7 +37,14 @@ function Micro:new(reg_size, sram_size, flash_size, io_size)
 	--initialise sram (8 bit chunks)
 	self.sram = {};
 	for i = 0,(sram_size - 1) do
-		self.sram[i] = "00000000";
+		-- test values
+		local str = ""
+		for _ = 1,8 do
+			str = str .. tostring(math.random(0,1))
+		end
+		self.sram[i] = str
+		-- real initialiser
+		-- self.sram[i] = "00000000";
 	end
 
 	--initialise flash (8 bit chunks)
@@ -65,7 +76,7 @@ function Micro:new(reg_size, sram_size, flash_size, io_size)
 	return self
 end
 
-function Micro:loadProgram()
+function Microcontroller:loadProgram()
 	-- take the string and make a table each element containing 8 bits
 	-- [start program, end program]
 	-- part to tell the micro-controller where to load the program
@@ -75,10 +86,10 @@ function Micro:loadProgram()
 	-- ?should I have an inbuilt stack, or stick it in the memory
 end
 
-function Micro:startProgram()
+function Microcontroller:startProgram()
 end
 
-function Micro:cycle(dt)
+function Microcontroller:update(dt)
 	-- read the instruction in the flash at the pointer
 
 	-- interpret the instruction
@@ -87,28 +98,28 @@ function Micro:cycle(dt)
 end
 
 -- Operations
-function Micro:mov(reg_adr1, reg_adr2) -- copy the contents of address1 to address2
+function Microcontroller:mov(reg_adr1, reg_adr2) -- copy the contents of address1 to address2
 	self:setReg(reg_adr2, self:loadReg(reg_adr1));
 end
 
-function Micro:add(reg_adr) -- add the contents of adr to the working directory
+function Microcontroller:add(reg_adr) -- add the contents of adr to the working directory
 	self:setReg("0000", self:binAddition(self:loadReg("0000"), self:loadReg(reg_adr)))
 end
 
-function Micro:adi(immediate) -- add the constant immediate to the value in the working directory
+function Microcontroller:adi(immediate) -- add the constant immediate to the value in the working directory
 	self:setReg("0000", self:binAddition(self:loadReg("0000"), immediate))
 end
 
-function Micro:clr(reg_adr) -- clear the specified register (set all to zero)
+function Microcontroller:clr(reg_adr) -- clear the specified register (set all to zero)
 	self:setReg(reg_adr, "00000000");
 end
 
-function Micro:jmp(mem_adr) -- jump to the specified location in the program
+function Microcontroller:jmp(mem_adr) -- jump to the specified location in the program
 	self:setIP(mem_adr)
 end
 
 -- Maths Functions
-function Micro:binAddition(bin1, bin2)
+function Microcontroller:binAddition(bin1, bin2)
 	local ans, carry, sum
 	ans = "";
 	carry = 0;
@@ -121,28 +132,28 @@ function Micro:binAddition(bin1, bin2)
 	return ans
 end
 
-function Micro:binSubtraction(bin1, bin2)
+function Microcontroller:binSubtraction(bin1, bin2)
 end
 
 -- Internal Operations
-function Micro:loadReg(adr)
+function Microcontroller:loadReg(adr)
 	return self.registerss(adr)
 end
 
-function Micro:setReg(adr, bin)
+function Microcontroller:setReg(adr, bin)
 	self.registers[adr] = bin;
 end
 
-function Micro:setCarry(val)
+function Microcontroller:setCarry(val)
 	self.flag[3] = val;
 end
 
-function Micro:setIP(mem_adr)
+function Microcontroller:setIP(mem_adr)
 	self.instruction_pointer = mem_adr;
 end
 
 
-function Micro:writeFlash(address, code)
+function Microcontroller:writeFlash(address, code)
 	-- ask about this
 	local loc = numbers.binToDec(address)
 	for i = 1,string.len(code) do

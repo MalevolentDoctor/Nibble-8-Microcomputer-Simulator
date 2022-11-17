@@ -1,43 +1,40 @@
 ---@diagnostic disable: lowercase-global
 
 Sprite = {
-    sprites = {},
-    flags = {hover = false, visible = true}
+    sprites = {}
 }
 Sprite.__index = Sprite
 
 function Sprite.new(x, y, sx, sy, images, flags)
-    obj = {};
-    setmetatable(obj, Sprite)
+    local self = {}
+    self.flags = {hover = false, visible = true}
+    setmetatable(self, Sprite)
 
-    obj.x = x;          -- x position of the sprite
-    obj.y = y;          -- y position of the sprite
-    obj.sx = sx;        -- x scale of the sprite
-    obj.sy = sy;        -- y scale of the sprite
-    obj.i = 1;          -- sprite index
+    self.x = x;          -- x position of the sprite
+    self.y = y;          -- y position of the sprite
+    self.sx = sx;        -- x scale of the sprite
+    self.sy = sy;        -- y scale of the sprite
+    self.i = 1;          -- sprite index
 
-    obj.images = {}     -- sprite images
+    self.images = {}     -- sprite images
     for i,v in ipairs(images) do
-        obj.images[i] = love.graphics.newImage(v)
+        self.images[i] = love.graphics.newImage(v)
     end
     
-    obj.w = obj.images[obj.i]:getWidth();
-    obj.h = obj.images[obj.i]:getHeight();
+    self.w = self.images[self.i]:getWidth();
+    self.h = self.images[self.i]:getHeight();
 
-    obj.flags = {}                      -- setting the sprite flags
-    for k,v in pairs(Sprite.flags) do
-        if flags == nil then
-            obj.flags[k] = v;
-        elseif flags[k] == nil then
-            obj.flags[k] = v;
-        else
-            obj.flags[k] = flags[k];
+    if flags ~= nil then
+        for k,v in pairs(self.flags) do
+            if flags[k] ~= nil then
+                self.flags[k] = flags[k];
+            end
         end
     end
 
-    table.insert(Sprite.sprites, obj);
+    table.insert(Sprite.sprites, self);
 
-    return obj
+    return self
 end
 
 function Sprite:draw()
