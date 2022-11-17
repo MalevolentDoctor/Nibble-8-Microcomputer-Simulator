@@ -1,1 +1,1 @@
-"love/love.exe" %cd% --console
+"love/love.exe" "%cd%" --console
