@@ -9,7 +9,7 @@ function love.load()
 	love.graphics.setLineStyle("rough")
 
 	love.keyboard.setKeyRepeat(true);
-	ObjDesktop = Desktop:new();
+	GLOBAL_obj_workbench = Workbench.new();
 
 	love.graphics.default_font = love.graphics.getFont();
 end
@@ -17,14 +17,14 @@ end
 function love.update(dt)
 	-- ObjEditor:update();
 	
-	Desktop:update()
+	Workbench:update()
 end
 
 function love.draw()
 	local window_width, window_height = love.window.getMode()
 
 	love.graphics.setCanvas(App.canvas)
-	ObjDesktop:draw();
+	GLOBAL_obj_workbench:draw();
 	-- Font:demo()
 
 	love.graphics.setCanvas()
