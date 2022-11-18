@@ -1,7 +1,10 @@
 Desktop = {};
+Desktop.__index = Desktop
 
-function Desktop:new()
-    setmetatable({}, Desktop)    
+function Desktop.new()
+    local self = {}
+    setmetatable(self, Desktop)
+
     self.active = true;
 
     self.win = Window.new(0, 0, App.window_width, App.window_width, 0, 0, 5, 0,
