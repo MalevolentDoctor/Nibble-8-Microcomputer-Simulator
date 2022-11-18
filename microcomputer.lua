@@ -3,7 +3,7 @@ require("fonts.fonts")
 Microcomputer = {};
 Microcomputer.__index = Microcomputer;
 
-function Microcomputer.new(microcontroller)
+function Microcomputer.new()
     local self = {}
     setmetatable(self, Microcomputer);
 
@@ -20,7 +20,7 @@ function Microcomputer.new(microcontroller)
 
     local _, window_height = App.getWindowSize()
 
-    self.obj_mc = microcontroller;
+    self.obj_microcontroller = Microcontroller.new(1,1,1,1);
 
     -- calculated values
     self.fnt_header_height = self.fnt_header:getHeight();
@@ -35,10 +35,10 @@ function Microcomputer.new(microcontroller)
             {{'4B051F', '380317'}, {'000'}, {'000'}}
         )
 
-        self.reg_win.reg_rows = math.floor(self.obj_mc.reg_size/2)
-        self.reg_win.registers = self.obj_mc.registers
-        self.reg_win.sp = self.obj_mc.stack_pointer
-        self.reg_win.ip = self.obj_mc.instruction_pointer
+        self.reg_win.reg_rows = math.floor(self.obj_microcontroller.reg_size/2)
+        self.reg_win.registers = self.obj_microcontroller.registers
+        self.reg_win.sp = self.obj_microcontroller.stack_pointer
+        self.reg_win.ip = self.obj_microcontroller.instruction_pointer
 
         -- translation layer
         self.reg_win.trans_reg_ind = {"0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000"}
@@ -109,7 +109,7 @@ function Microcomputer.new(microcontroller)
         self.ram_win.window_rows = math.floor(self.ram_win.h_int/(self.ram_win.fnt_txt2_h + 1)) - 1
         self.ram_win.row_offset = 0;
 
-        self.ram_win.ram = self.obj_mc.sram
+        self.ram_win.ram = self.obj_microcontroller.sram
 
         function self.ram_win:draw()
             self:resetCurrentY()
