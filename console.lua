@@ -168,12 +168,14 @@ function Console:draw()
     end
 end
 
+-- input a character in the console input
 function Console:charInput(char)
     self.text[self.vert_cursor] = self.text[self.vert_cursor]:insert(char, self.horz_cursor)
     self.horz_cursor = self.horz_cursor + char:len()
     self:updateScrollPosition()
 end
 
+-- remove the character preceding the cursor
 function Console:backspace()
     if self.horz_cursor ~= 1 then -- if at the beginning of a line, the backspace will remove a line
         self.text[self.vert_cursor] = self.text[self.vert_cursor]:remove(self.horz_cursor - 1, self.horz_cursor - 1)
@@ -181,22 +183,26 @@ function Console:backspace()
     end
 end
 
+-- remove the character at the cursor's position
 function Console:del()
     self.text[self.vert_cursor] = self.text[self.vert_cursor]:remove(self.horz_cursor, self.horz_cursor)
 end
 
+-- move the cursor to the left
 function Console:cursorLeft()
     if self.horz_cursor ~= 1 then
         self.horz_cursor = self.horz_cursor - 1;
     end
 end
 
+-- move the cursor to the right
 function Console:cursorRight()
     if self.horz_cursor ~= string.len(self.text[self.vert_cursor]) + 1 then
         self.horz_cursor = self.horz_cursor + 1
     end
 end
 
+-- called when the up arrow is pressed
 function Console:upArrow()
     if love.keyboard.isDown("rctrl") or love.keyboard.isDown("lctrl") then
         self.top_line = math.max(1, self.top_line - 1);
@@ -210,6 +216,7 @@ function Console:upArrow()
     end
 end
 
+-- called when the down arrow is pressed
 function Console:downArrow()
     if love.keyboard.isDown("rctrl") or love.keyboard.isDown("lctrl") then
         self.top_line = math.min(self.text.n, self.top_line + 1);
@@ -226,6 +233,7 @@ function Console:downArrow()
     end
 end
 
+-- updates the position of the displayed text in the window depending on the cursor position (so that it is in frame)
 function Console:updateScrollPosition()
     -- cursor cannot be above the top line, only below the bottom
     if self.vert_cursor > self.top_line + self.lines then
@@ -233,6 +241,7 @@ function Console:updateScrollPosition()
     end
 end
 
+-- called when the enter button is pressed
 function Console:consoleEnter()
     self.command_buffer.i = 0;
 
@@ -253,6 +262,7 @@ function Console:consoleEnter()
     self:updateScrollPosition()
 end
 
+-- interprets a command entered into the console, calling one of the following funcitons
 function Console:interpreter(command_string)
     -- execute the command entered
     local command = (command_string:strip()):split("%s")
@@ -410,26 +420,20 @@ end
 
 -- create a new file in the editor (replacing the old one)
 function Console:newFile(command)
-    -- check that an editor is running
-    if self.editor_is_running then
-        -- throw an error if there is currently an unsaved file in the editor
-        if command[1] == "new" and self.saved == false then
-            self:consolePrint("Warning: File not saved, use '!new' to override"); return;
-        end
-
-        -- check that no additional arguments were provided
-        if command[2] ~= nil then
-            self:consolePrint("Error: Too many arguments provided"); return;
-        end
-
-        -- resetting the editor to a blank slate
-        self.editor.text = {n = 1, ""};
-        self.editor.file_name = "Untitled"
-        self.editor:reset()
-    else
-        -- if the editor is not running
-        self:consolePrint("Error: No editor running, must be using the editor to call this command")
+    -- throw an error if there is currently an unsaved file in the editor
+    if command[1] == "new" and self.objEditor.saved == false then
+        self:consolePrint("Warning: File not saved, use '!new' to override"); return;
     end
+
+    -- check that no additional arguments were provided
+    if command[2] ~= nil then
+        self:consolePrint("Error: Too many arguments provided"); return;
+    end
+
+    -- resetting the editor to a blank slate
+    self.objEditor.text = {n = 1, ""};
+    self.objEditor.file_name = "Untitled"
+    self.objEditor:reset()
 end
 
 -- assembles the code in the editor or loaded from a file
@@ -452,34 +456,21 @@ function Console:buildFile(command)
     -- check if one or two file names were provided
     if command[3] == nil then
         -- only one file name provided, assumed to be the output
-
         ofname = ifname -- rename for clarity
+
         -- append .bin extension if none provided
         if not ofname:includes("%.") then ofname = ofname .. ".bin" end
-
-        if self.editor_is_running then
-            -- if editor running, then get data from editor
-            compile_message = Assembler:assemble(self.editor.text, "editor/saves/" .. ofname)
-        else
-            -- if the editor is not running, get the data from local
-            -- check that data has been loaded locally
-            if self.file_text.n ~= nil then
-                compile_message = Assembler:assemble(self.file_text, "editor/saves/" .. ofname)
-            else
-                -- no data has been loaded locally, throw an error
-                self:consolePrint("Error: no file loaded to be assembled")
-            end
-        end
+        compile_message = Assembler:assemble(self.editor.text, "editor/saves/" .. ofname)
     else
         -- if two files are provided then we load locally then build
-        -- append .txt/.bin extension if none provided as required
         if not ifname:includes("%.") then ifname = ifname .. ".txt" end
         if not ofname:includes("%.") then ofname = ofname .. ".bin" end
-        
-        -- load the file locally
-        if self:loadFileLocal(ifname) then
-            compile_message = Assembler:assemble(self.file_text, "editor/saves/" .. ofname)
+
+        local ifile_text, err = table.textLoad("editor/saves/" .. ifname)
+        if err == nil then
+            compile_message = Assembler:assemble(ifile_text, "editor/saves/" .. ofname)
         else
+            self:consolePrint("Error: failed to load file " .. ifname)
             return false
         end
     end
@@ -489,10 +480,8 @@ function Console:buildFile(command)
         for i = 1,compile_message.n do
             self:consolePrint(compile_message[i])
         end
-
         self:updateScrollPosition();
     end
-
 end
 
 -- deletes the specified file
