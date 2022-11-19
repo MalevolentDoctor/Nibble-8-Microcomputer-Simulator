@@ -1,23 +1,17 @@
--- UPDATES TO MAKE
---[[
-    Smarter Tab-ing (doesn't just jump 4 spaces)
-    Cursor remembers horizontal position
---]]
-
 Editor = {};
 Editor.__index = Editor
 
-function Editor.new(desktop)
+function Editor.new(console, x, y, w, h, shader_adjust)
 	local self = {}
 	setmetatable(self, Editor)
 
 	self.active = true
-	self.desktop = desktop -- desktop that started the editor
+	self.thisConsole = console -- desktop that started the editor
 
-	self.x = 0;
-    self.y = 0;
-    self.w = App.window_width;
-    self.h = App.window_height - 100;
+	self.x = x + (shader_adjust and 1 or 0)
+    self.y = y + (shader_adjust and 1 or 0)
+    self.w = w
+    self.h = h
 
     -- file
     self.saved = true;              -- whether or not the current file is saved
@@ -101,24 +95,31 @@ function Editor:update()
             self:shiftVertCursor(self.nav_vert_cursor[nav_key])
         end
 
+        if misc_key == "escape" then
+			self.active = false
+            self.thisConsole.active = true
+		end
+
         keyboard:reset();
     end
 end
 
 -- draw funciton
 function Editor:draw()
-    -- draw window
-    self.win:draw(self)
+    if self.active == true then
+        -- draw window
+        self.win:draw(self)
 
-    -- draw cursor
-    local editor_cursor_x = self.win.x_int + (self.horz_cursor + self.max_line_num_buffer)*self.win.fnt_txt2_w;
-    local editor_cursor_y = self.win.y_int + self.win.hdr_h + (self.vert_cursor - self.top_line) * ((self.win.fnt_txt2_h + self.win.line_spacing));
+        -- draw cursor
+        local editor_cursor_x = self.win.x_int + (self.horz_cursor + self.max_line_num_buffer)*self.win.fnt_txt2_w;
+        local editor_cursor_y = self.win.y_int + self.win.hdr_h + (self.vert_cursor - self.top_line) * ((self.win.fnt_txt2_h + self.win.line_spacing)) + 1;
 
-    love.graphics.setColor(1,1,1,0.5);
-    love.graphics.rectangle("fill", editor_cursor_x, editor_cursor_y, self.win.fnt_txt2_w, self.win.fnt_txt2_h + 2)
+        love.graphics.setColor(1,1,1,0.5);
+        love.graphics.rectangle("fill", editor_cursor_x, editor_cursor_y, self.win.fnt_txt2_w, self.win.fnt_txt2_h + 2)
 
-    -- reset colour
-    love.graphics.setColor(1,1,1,1);
+        -- reset colour
+        love.graphics.setColor(1,1,1,1);
+    end
 end
 
 do -- TEXT MODIFICATION [backspace, delete, enter character]
