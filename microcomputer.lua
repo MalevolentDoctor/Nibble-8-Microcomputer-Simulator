@@ -129,7 +129,6 @@ function Microcomputer.new()
                 end
                 val_str = table.concat(vals, " ")
                 self:printText({self.col_txt[1], "0x" .. row_hex_index .. " " .. val_str}, self.fnt_txt2)
-                self:vspace(1)
             end
             self:drawBorder(2)
         end
@@ -205,16 +204,16 @@ function Microcomputer:drawMicroprocessor()
     love.graphics.print("NIBBLE-8", x + 23, y + 7)
     love.graphics.print("FLAGS", x + 23, y + 65)
     love.graphics.setFont(Font.fonts["pxl_5x7_thin"])
-    love.graphics.print("GP REGISTERS:" .. tostring(self.obj_mc.reg_size - 1), x + 23, y + 20)
-    love.graphics.print("RAM:" .. tostring(self.obj_mc.sram_size) .. " Bytes", x + 23, y + 30)
-    love.graphics.print("ROM:" .. tostring(self.obj_mc.flash_size) .. " Bytes", x + 23, y + 40)
-    love.graphics.print("IO:" .. tostring(self.obj_mc.io_size) .. " Ports", x + 23, y + 50)
+    love.graphics.print("GP REGISTERS:" .. tostring(self.obj_microcontroller.reg_size - 1), x + 23, y + 20)
+    love.graphics.print("RAM:" .. tostring(self.obj_microcontroller.sram_size) .. " Bytes", x + 23, y + 30)
+    love.graphics.print("ROM:" .. tostring(self.obj_microcontroller.flash_size) .. " Bytes", x + 23, y + 40)
+    love.graphics.print("IO:" .. tostring(self.obj_microcontroller.io_size) .. " Ports", x + 23, y + 50)
 
-    love.graphics.print("SIGN:      " .. tostring(self.obj_mc.flag[1]), x + 23, y + 75)
-    love.graphics.print("ZERO:      " .. tostring(self.obj_mc.flag[2]), x + 23, y + 85)
-    love.graphics.print("PARITY:    " .. tostring(self.obj_mc.flag[3]), x + 23, y + 95)
-    love.graphics.print("CARRY:     " .. tostring(self.obj_mc.flag[4]), x + 23, y + 105)
-    love.graphics.print("AUX CARRY: " .. tostring(self.obj_mc.flag[5]), x + 23, y + 115)
+    love.graphics.print("SIGN:      " .. tostring(self.obj_microcontroller.flag[1]), x + 23, y + 75)
+    love.graphics.print("ZERO:      " .. tostring(self.obj_microcontroller.flag[2]), x + 23, y + 85)
+    love.graphics.print("PARITY:    " .. tostring(self.obj_microcontroller.flag[3]), x + 23, y + 95)
+    love.graphics.print("CARRY:     " .. tostring(self.obj_microcontroller.flag[4]), x + 23, y + 105)
+    love.graphics.print("AUX CARRY: " .. tostring(self.obj_microcontroller.flag[5]), x + 23, y + 115)
 end
 
 function Microcomputer:drawROM()

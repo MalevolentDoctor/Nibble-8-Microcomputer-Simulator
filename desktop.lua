@@ -131,8 +131,7 @@ end
 
 function Desktop:openMicrocomputer()
     if self.applications.obj_mcomputer.active == nil then
-        self.applications.obj_mcontroller = Microcontroller.new(9, 65536, 10, 2)
-        self.applications.obj_mcomputer = Microcomputer.new(self.applications.obj_mcontroller)
+        self.applications.obj_mcomputer = Microcomputer.new()
         self.active = false
         self.spr_microcomputer_icon.i = 1
     elseif self.applications.obj_mcomputer.active == false then

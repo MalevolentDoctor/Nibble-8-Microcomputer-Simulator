@@ -1,6 +1,5 @@
 require("init")
 
-
 function love.load()
 	App.init()
 	Font.init()
@@ -17,17 +16,15 @@ end
 function love.update(dt)
 	-- ObjEditor:update();
 	
-	Workbench:update()
+	GLOBAL_obj_workbench:update()
 end
 
 function love.draw()
 	local window_width, window_height = love.window.getMode()
 
-	love.graphics.setCanvas(App.canvas)
 	GLOBAL_obj_workbench:draw();
 	-- Font:demo()
 
-	love.graphics.setCanvas()
 	love.graphics.setColor(1,1,1)
 	love.graphics.draw(App.canvas, 0, 0, 0, App.scale, App.scale)
 
