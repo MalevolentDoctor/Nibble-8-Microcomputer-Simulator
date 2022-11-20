@@ -34,25 +34,20 @@ function Editor.new(console, x, y, w, h, shader_adjust)
     self.horz_cursor = 1;           -- horizontal position of the cursor
 
 	-- window parameters
-	self.win = Window.new(self.x, self.y, self.w, self.h, 0, 0, 5, 0,
+	self.win = Window.new(self.x, self.y, self.w, self.h, 0, 20, 5, 0,
 	{"dos16", "pxl_5x7_bold", "pxl_5x7_thin"}, -- fonts
 	{{"202020", "101010"}, {"000"}, {"ccc", "ddd"}} -- colours
 	)
+    self.win.line_spacing = 3;
 	self.win:init()
 
 	function self.win:draw(editor)
 		self:resetCurrentY()
+        self:drawExternBackground()
         self:drawBackground()
 
-        if editor.saved then
-            self:drawTitle({self.col_txt[1], "EDITOR" .. "    " .. editor.file_name}, true)
-        else
-            self:drawTitle({self.col_txt[1], "EDITOR" .. "    *" .. editor.file_name}, true)
-        end
-        self:hline(2)
-
         -- draw editor text
-        local bottom_line = editor.top_line + editor.lines - 1
+        local bottom_line = editor.top_line + editor.lines
         for i = editor.top_line, bottom_line do
             if editor.text[i] ~= nil then
                 local line_num_buffer = string.rep(" ", editor.max_line_num_buffer - string.len(tostring(i)) - 1)
@@ -63,7 +58,7 @@ function Editor.new(console, x, y, w, h, shader_adjust)
 
 	self.win:init()
 
-	self.lines = math.floor((self.win.h_int - self.win.fnt_hdr_h)/(self.win.fnt_txt2_h + self.win.line_spacing)) - 1
+	self.lines = math.floor((self.win.h_int - 1)/(self.win.fnt_txt2_h + self.win.line_spacing))
 
     self.nav_vert_cursor = {
         ["up"] = -1, ["down"] = 1,
@@ -112,7 +107,7 @@ function Editor:draw()
 
         -- draw cursor
         local editor_cursor_x = self.win.x_int + (self.horz_cursor + self.max_line_num_buffer)*self.win.fnt_txt2_w;
-        local editor_cursor_y = self.win.y_int + self.win.hdr_h + (self.vert_cursor - self.top_line) * ((self.win.fnt_txt2_h + self.win.line_spacing)) + 1;
+        local editor_cursor_y = self.win.y_int + (self.vert_cursor - self.top_line) * ((self.win.fnt_txt2_h + self.win.line_spacing)) - 1;
 
         love.graphics.setColor(1,1,1,0.5);
         love.graphics.rectangle("fill", editor_cursor_x, editor_cursor_y, self.win.fnt_txt2_w, self.win.fnt_txt2_h + 2)
@@ -238,7 +233,7 @@ do -- NAVIGATION [enter, arrow keys, home/end/pg up/pg down]
     function Editor:updateScrollPosition()
         local bottom_line = self.top_line + self.lines - 1
         if self.vert_cursor > bottom_line then
-            self.top_line = self.vert_cursor - self.lines + 1
+            self.top_line = self.vert_cursor - self.lines
         end
 
         if self.vert_cursor < self.top_line then
