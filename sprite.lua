@@ -1,11 +1,9 @@
----@diagnostic disable: lowercase-global
-
 Sprite = {
     sprites = {}
 }
 Sprite.__index = Sprite
 
-function Sprite.new(x, y, sx, sy, images, flags)
+function Sprite.new(x, y, sx, sy, images, filter, flags)
     local self = {}
     self.flags = {hover = false, visible = true}
     setmetatable(self, Sprite)
@@ -19,6 +17,7 @@ function Sprite.new(x, y, sx, sy, images, flags)
     self.images = {}     -- sprite images
     for i,v in ipairs(images) do
         self.images[i] = love.graphics.newImage(v)
+        self.images[i]:setFilter(filter, filter, 16)
     end
     
     self.w = self.images[self.i]:getWidth();
