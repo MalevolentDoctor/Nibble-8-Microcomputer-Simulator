@@ -33,59 +33,85 @@ function Console.new(parentComputer, x, y, w, h, shader_adjust)
 
     -- text to provide for the help command
     self.help_text = {
-        help_list = {"build", "clc", "close", "exit", "help", "load", "new", "save"},
+        help_list = {"build", "clc", "delete", "edit", "help", "list", "load", "new", "save"},
         build = {
             "build  assembles assembly code to Nibble-8 machine code",
-            "build:  assembles current code opened in editor or loaded into the console,",
-            "    or loaded in from a file provided as an optional parameter",
+            "build:  assembles current code opened in editor or loaded",
+            "    into the console, or loaded in from a file provided as",
+            "    an optional parameter",
             "",
-            "build <out file>:  assembles the code currently loaded in the editor or",
-            "    console, and outputs the machine code to `file out'",
-            "build <in file, out file>:  assembles the code from `in file' and outputs",
-            "    the machine code to `out file'",
+            "build <out file>:  assembles the code currently loaded in",
+            "    the editor or console, and outputs the machine code to",
+            "    <out file>",
+            "build <in file, out file>:  assembles the code from",
+            "    <in file> and outputs the machine code to <out file>",
             "",
-            "parameters:",
-            "    <out file> file to save the machine code to, default extension .bin",
+            "Parameters:",
+            "    <out file> file to save the machine code to, default", 
+            "        extension .bin",
             "    <in file>  (optional) file to load assembly code from"
         },
         clc = {
             "clc    clears the console",
             "clc:  clears the console window of all text"
         },
-        close = {
-            "close  minimizes the editor",
-            "close:  minimizes the editor window, all work is persistent",
-            "   use `exit' to exit the editor entirely",
+        delete = {
+            "delete deletes the specified file",
+            "delete <file>:  deletes the specified file from the current",
+            "    directory",
+            "",
+            "Parameters:",
+            "    <file> file to delete from the current directory"
         },
-        exit = {
-            "exit   exits the editor",
-            "exit:  exits the editor window, all work is cleared",
-            "   use `close' to minimise the window and keep work",
-            "   *currently does not work and performs the same operation as `close'"
+        edit = {
+            "edit   opens the text editor",
+            "edit:  opens the text editor, loading in a file if",
+            "    specified",
+            "",
+            "edit: opens the text editor with a blank file named",
+            "    `Untitled'",
+            "edit <file>: if <file> exists, opens the text edtor and",
+            "    loads in <file>, if <file> does not exists, then the",
+            "    editor opens with a blank file named <file>",
+            "",
+            "Parameters:",
+            "    <file> name of file to load into the editor or name", 
+            "    blank file"
         },
         help = {
             "help   summary of commands or help for specified command",
             "help:            provides a summary of commands",
-            "help <command>:  provides the details for a specific command"
+            "help <command>:  provides the details for a specific",
+            "    command"
+        },
+        list = {
+            "list   lists the files in the current directory",
+            "list:  lists all the files in the current directory, by",
+            "    default this is 'editor/saves/'"
         },
         load = {
             "load   loads a file",
-            "load <file>:  loads a file from the specified directory into the editor",
-            "   prefix with `!' to override warnings",
-            "parameters: ",
-            "   <file>  directory from which to laod the file, default extension is .txt"
+            "load <file>:  loads a file from the specified directory",
+            "    into the editor prefix with `!' to override warnings",
+            "",
+            "Parameters: ",
+            "    <file>  directory from which to load the file, default",
+            "    extension is .txt"
         },
         new = {
             "new    creates a new file",
-            "new:  clears the current file open in the editor to leave a blank page",
-            "   prefix with `!' to override warnings",
+            "new:  clears the current file open in the editor to leave a",
+            "    blank page, prefix with `!' to override warnings",
         },
         save = {
             "save   saves current file",
-            "save <file>:  saves the current file in the editor to a file at the specified directory",
-            "   prefix with `!' to override warnings",
-            "parameters: ",
-            "   <file>  directory at which to save the file, default extension is .txt"
+            "save <file>:  saves the current file in the editor to a",
+            "    file at the specified directory, prefix with `!' to",
+            "    override warnings",
+            "",
+            "Parameters: ",
+            "    <file>  directory at which to save the file, default",
+            "    extension is .txt"
         }
     }
 
@@ -522,8 +548,6 @@ function Console:help(command)
         -- print a couple of the relevant controls
         self:consolePrint("")
         self:consolePrint("     -- Controls --")
-        self:consolePrint("F1                   editor")
-        self:consolePrint("F2                   console")
         self:consolePrint("ctrl + arrow keys    scroll console")
         self:consolePrint("")
         self:consolePrint("use `help <command>' to see more details")
