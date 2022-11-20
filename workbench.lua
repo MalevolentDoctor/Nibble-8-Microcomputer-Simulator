@@ -11,7 +11,7 @@ function Workbench.new()
 	self.page = 0
 
 	self.crt = love.graphics.newShader("shaders/fragment/frag_crt.glsl", "shaders/vertex/vert_passthrough.glsl")
-	self.spr_workbench_pg1_bg = Sprite.new(0, 0, App.scale, App.scale, {"assets/png/workbench_pg1.png"})
+	self.spr_workbench_pg1_bg = Sprite.new(0, 0, 1/3, 1/3, {"assets/png/workbench_pg1_hires.png"}, "linear")
 
 	return self
 end
