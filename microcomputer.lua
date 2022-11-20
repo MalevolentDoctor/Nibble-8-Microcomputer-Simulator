@@ -139,7 +139,7 @@ function Microcomputer.new()
     -- sprites
     self.spr_microcontroller = Sprite.new(
         -1, 10, 1, 1, 
-        {"assets/png/microcontroller_chip.png"},
+        {"assets/png/microcontroller_chip.png"}, "nearest",
         {hover = false, visible = false}
     )
     self.spr_microcontroller.x = math.floor(App.window_width/2) - math.floor(self.spr_microcontroller.w/2)

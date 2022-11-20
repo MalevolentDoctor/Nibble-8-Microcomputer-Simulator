@@ -90,9 +90,9 @@ function Console.new(parentComputer, x, y, w, h, shader_adjust)
     }
 
     -- window parameters
-    self.win = Window.new(self.x, self.y, self.w, self.h, 0, 0, 5, 0,
+    self.win = Window.new(self.x, self.y, self.w, self.h, 0, 20, 5, 0,
     {"dos16", "pxl_5x7_bold", "pxl_5x7_bold"}, -- fonts
-    {{"202020", "101010"}, {"000"}, {"ccc", "ddd"}} -- colours
+    {{"7FB6CA", "3C5A65"}, {"000"}, {"ccc", "ddd"}} -- colours
     )
     self.win:init()
 
@@ -100,9 +100,8 @@ function Console.new(parentComputer, x, y, w, h, shader_adjust)
 
     function self.win:draw(console)
         self:resetCurrentY()
+        self:drawExternBackground()
         self:drawBackground()
-        -- self:drawTitle({self.col_txt[1], "CONSOLE"}, true)
-        -- self:hline(2)
     
         -- draw console text
         local bottom_line = console.top_line + console.lines + 1
