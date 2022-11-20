@@ -532,10 +532,15 @@ end
 
 -- clears all the text from the console
 function Console:clearConsole()
+    -- set empty parameters so that they will correct when iterated by consoleEnter
     self.text = {n = 0}
     self.vert_cursor = 0;
     self.horz_cursor = 0;
+    
+    -- reset the screen to the top
+    self.top_line = 1;
 end
+    
 
 -- prints help text for specified commands or a summary of all
 function Console:help(command)
