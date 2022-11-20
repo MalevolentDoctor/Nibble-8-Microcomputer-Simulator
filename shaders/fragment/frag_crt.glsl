@@ -17,8 +17,9 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
 	float cr, cg, cb, ca;
 	cr = color.r; cg = color.g; cb = color.b; ca = color.a;
 
-	vec2 dir;
+	vec2 dir, dirv;
 	dir.xy = vec2(1.0, 0.0)/(window_width*window_scale);
+	dirv.xy = vec2(0.0, 1.0)/(window_width*window_scale);
 	
 	// curvature of the screen
 	float tx = texture_coords.x - 0.5;
@@ -30,22 +31,22 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
 	coords.y += stretchy;
 
 	// scan lines
-	float line_intensity = 0.8;
+	float line_intensity = 0.3;
 	float frequency = 480;
 
-	col += (line_intensity - line_intensity * sin(frequency * PI * coords.y)) * (1 - abs(tx * tx)) * (1 - abs(ty * ty));
+	col.rgb += (line_intensity - line_intensity * sin(frequency * PI * coords.y)) * (1 - abs(tx * tx)) * (1 - abs(ty * ty)) + line_intensity/4;
 
 	//vignette
-	col -= abs(tx * tx * tx)*3;
-	col -= abs(ty * ty * ty)*3;
+	col -= abs(tx * tx * tx)*2;
+	col -= abs(ty * ty * ty)*2;
 
 	// horizontal blur
     vec4 tex_col = Texel(tex, coords);
-	tex_col += Texel(tex, coords + dir)*0.4;
-	tex_col += Texel(tex, coords - dir)*0.4;
-	tex_col += Texel(tex, coords + dir*2)*0.1;
-	tex_col += Texel(tex, coords - dir*2)*0.1;
-	tex_col /= 2;
+	tex_col += Texel(tex, coords + dir)*0.5;
+	tex_col += Texel(tex, coords - dir)*0.5;
+	tex_col += Texel(tex, coords + dirv)*1;
+	tex_col += Texel(tex, coords - dirv)*1;
+	tex_col /= 4;
 
     return tex_col * col;
 }
