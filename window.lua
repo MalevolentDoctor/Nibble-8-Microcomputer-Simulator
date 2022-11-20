@@ -99,8 +99,13 @@ function Window:vspace(px)
     self.current_y = self.current_y + px
 end
 
-function Window:drawBackground()
+function Window:drawExternBackground()
     love.graphics.setColor(self.col_bg[1])
+    love.graphics.rectangle("fill", self.x, self.y, self.w, self.h, self.r)
+end
+
+function Window:drawBackground()
+    love.graphics.setColor(self.col_bg[2])
     love.graphics.rectangle("fill", self.x_ext, self.y_ext, self.w_ext, self.h_ext, self.r)
 end
 
@@ -110,7 +115,7 @@ function Window:drawBorder(width)
     love.graphics.rectangle("line", self.x_ext, self.y_ext, self.w_ext, self.h_ext, self.r)
 end
 
-function Window:drawTitle(text, background)
+function Window:drawTitle(text, background) -- change to use col 3
     if background then
         love.graphics.setColor(self.col_bg[2])
         love.graphics.rectangle("fill", self.x_ext, self.y_ext, self.w_ext, self.hdr_h)
