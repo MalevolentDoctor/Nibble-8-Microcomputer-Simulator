@@ -1,29 +1,7 @@
 # README #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+This is a work in progress microcontroller/microcomputer simulator, you will be able to configure the microcomputer's RAM, ROM and clock speed, and parameters of the microprocessor such as the number of registers. There is a built in text editor which lets you write programs in assembly and an assembler which converts the assembly to machine code which can be loaded onto the microcomputer's ROM.
 
-### What is this repository for? ###
+### Running ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
-
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+While this still very incomplete, you can run it on Windows by just cloning the repository and running run.bat. It should work on other operating systems as well, however you will need to install LOVE2D, from which you can run the program by dragging and dropping the Microcontroller folder onto the love executable.
