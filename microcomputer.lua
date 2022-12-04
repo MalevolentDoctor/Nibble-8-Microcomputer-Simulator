@@ -210,12 +210,19 @@ function Microcomputer:readAddressPins()
     self.address_bus = self.obj_microprocessor.address_bus
 end
 
+function Microcomputer:readDataPins()
+    self.data_bus = self.obj_microprocessor.data_bus
+end
+
 function Microcomputer:readMemory()
     self:readAddressPins()
     self.data_bus = self.obj_ram.ram[self.address_bus] or self.obj_rom.rom[self.address_bus]
 end
 
 function Microcomputer:writeMemory()
+    self:readAddressPins()
+    self:readDataPins()
+    
     if self.obj_ram.ram[self.address_bus] ~= nil then
         self.obj_ram.ram[self.address_bus] = self.data_bus
     end
