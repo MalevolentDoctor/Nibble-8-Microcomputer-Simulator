@@ -27,6 +27,7 @@ function Console.new(parentComputer, x, y, w, h, shader_adjust)
     self.top_line = 1;                          -- top line visible in the console
     self.command_buffer = {n = 0, i = 0};       -- table containing previously entered commands
     self.command_buffer[0] = "";
+    self.buffer_moved = false;
 
     self.vert_cursor = 1;   -- vertical position of the cursor in the console
     self.horz_cursor = 1;   -- horizontal position of the cursor in the console
@@ -116,7 +117,7 @@ function Console.new(parentComputer, x, y, w, h, shader_adjust)
     }
 
     -- window parameters
-    self.win = Window.new(self.x, self.y, self.w, self.h, 0, 20, 5, 0,
+    self.win = Window.new(self, self.x, self.y, self.w, self.h, 0, 20, 5, 0,
     {"dos16", "pxl_5x7_bold", "pxl_5x7_bold"}, -- fonts
     {{"7FB6CA", "3C5A65"}, {"000"}, {"ccc", "ddd"}} -- colours
     )
@@ -185,8 +186,8 @@ function Console:draw()
         self.win:draw(self)
 
         -- draw cursor
-        local cursor_x = self.win.x_int + (self.horz_cursor + 3)*self.win.fnt_txt2_w;
-        local cursor_y = self.win.y_int + (self.vert_cursor - self.top_line)*(self.win.fnt_txt2_h + self.win.line_spacing) - 1;
+        local cursor_x = self.win.x_int + (self.horz_cursor + 3)*self.win.fnt_txt2_w
+        local cursor_y = self.win.y_int + (self.vert_cursor - self.top_line)*(self.win.fnt_txt2_h + self.win.line_spacing) - 1
 
         love.graphics.setColor(1,1,1,0.5);
         love.graphics.rectangle("fill", cursor_x, cursor_y, self.win.fnt_txt2_w, self.win.fnt_txt2_h + 2)
@@ -230,30 +231,32 @@ end
 -- called when the up arrow is pressed
 function Console:upArrow()
     if love.keyboard.isDown("rctrl") or love.keyboard.isDown("lctrl") then
-        self.top_line = math.max(1, self.top_line - 1);
+        self.top_line = math.max(1, self.top_line - 1)
     else
-        self:updateScrollPosition();
+        self:updateScrollPosition()
         self.command_buffer.i = math.min(self.command_buffer.i + 1, self.command_buffer.n)
-        if self.command_buffer.i ~= 0 then
-            self.text[self.vert_cursor] = self.command_buffer[self.command_buffer.n - self.command_buffer.i + 1]
-            self.horz_cursor = self.text[self.vert_cursor]:len() + 1;
-        end
+        self.text[self.vert_cursor] = self.command_buffer[self.command_buffer.n - self.command_buffer.i + 1]
+        self.horz_cursor = self.text[self.vert_cursor]:len() + 1
+        self.buffer_moved = true
     end
 end
 
 -- called when the down arrow is pressed
 function Console:downArrow()
     if love.keyboard.isDown("rctrl") or love.keyboard.isDown("lctrl") then
-        self.top_line = math.min(self.text.n, self.top_line + 1);
+        self.top_line = math.min(self.text.n, self.top_line + 1)
     else
         self:updateScrollPosition();
         self.command_buffer.i = math.max(self.command_buffer.i - 1, 0)
         if self.command_buffer.i == 0 then
-            self.text[self.vert_cursor] = "";
-            self.horz_cursor = 1;
+            if self.buffer_moved then
+                self.text[self.vert_cursor] = ""
+                self.horz_cursor = 1
+                self.buffer_moved = false
+            end
         else
             self.text[self.vert_cursor] = self.command_buffer[self.command_buffer.n - self.command_buffer.i + 1]
-            self.horz_cursor = self.text[self.vert_cursor]:len() + 1;
+            self.horz_cursor = self.text[self.vert_cursor]:len() + 1
         end
     end
 end
@@ -274,8 +277,8 @@ function Console:consoleEnter()
 
     if command ~= "" then
         if self.command_buffer[self.command_buffer.n] ~= command then
-            self.command_buffer[self.command_buffer.n + 1] = command;
             self.command_buffer.n = self.command_buffer.n + 1
+            self.command_buffer[self.command_buffer.n] = command;
         end
         self:interpreter(command);
     end
@@ -297,15 +300,16 @@ function Console:interpreter(command_string)
         print("Command started with 'Error:' or 'Notice:'") -- check if this is actually being used
         self.text[self.vert_cursor] = "";
         self.horz_cursor = 1;
-    elseif command[1] == "build"  then self:buildFile(command)
-    elseif command[1] == "clc"    then self:clearConsole()
-    elseif command[1] == "delete" then self:deleteFile(command)
-    elseif command[1] == "edit"   or command[1] == "!edit"  then self:openEditor(command)
-    elseif command[1] == "help"   then self:help(command)
-    elseif command[1] == "list"   then self:listFiles(command)
-    elseif command[1] == "load"   or command[1] == "!load"  then self:loadFile(command)
-    elseif command[1] == "new"    or command[1] == "!new"   then self:newFile(command)
-    elseif command[1] == "save"   or command[1] == "!save"  then self:saveFile(command)
+    elseif command[1] == "build"   then self:buildFile(command)
+    elseif command[1] == "clc"     then self:clearConsole()
+    elseif command[1] == "delete"  then self:deleteFile(command)
+    elseif command[1] == "edit"    or command[1] == "!edit"  then self:openEditor(command)
+    elseif command[1] == "help"    then self:help(command)
+    elseif command[1] == "list"    then self:listFiles(command)
+    elseif command[1] == "load"    or command[1] == "!load"  then self:loadFile(command)
+    elseif command[1] == "new"     or command[1] == "!new"   then self:newFile(command)
+    elseif command[1] == "program" then self:programRom(command)
+    elseif command[1] == "save"    or command[1] == "!save"  then self:saveFile(command)
     else -- Error failed to find command
         self:consolePrint("Error: No command \"" .. command[1] .. "\" found")
     end
