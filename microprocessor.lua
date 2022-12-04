@@ -130,18 +130,22 @@ end -- Arithmetic
 do -- Incrementing/Decrementing
 
     function Microprocessor:inip()
+        self:incInstructionPointer()
     end
 
     function Microprocessor:dcip()
+        self:decInstructionPointer()
     end
 
     function Microprocessor:insp()
+        self:incStackPointer()
     end
 
     function Microprocessor:dcsp()
+        self:decStackPointer()
     end
 
-end
+end -- incrementing/Decrementing
 
 do -- Set/Clear flags (should take 2 cycles each)
 
@@ -260,9 +264,11 @@ end -- Logic
 do -- Data Manipulation
 
     function Microprocessor:rort()
+        self:rotateRightThroughCarry()
     end
 
     function Microprocessor:rolt()
+        self:rotateLeftThroughCarry()
     end
 
 end -- Data Manipulation
@@ -272,112 +278,204 @@ do -- Moving Data
     -- copy the contents of one register to another
     function Microprocessor:mvrr()
         self:meta_getMemByte()
-        local low_reg, high_reg = self:decodeRegister(self.thisMicrocomputer.data_bus)
-        self:setRegister(high_reg, self:pullRegister(low_reg))
+        local lo_reg, hi_reg = self:decodeRegister()
+        self:readRegister(lo_reg)
+        self:writeRegister(hi_reg)
     end
 
     -- stores the accumulator at the specified address in memory
     function Microprocessor:stma()
-        self:getMemBytePair()
-        self:pushAddressBus(self:pullRegister("Y"), self:pullRegister("X"))
-        self:pushDataBus(self.accumulator)
+        self:meta_writeMemBytePairToXY()
+        self:meta_writeAddressBusFromXY()
+        self:readRegister(0x0)
         self.thisMicrocomputer:writeMemory()
     end
 
     -- stores the accumulator at the address specified by the Z register in memory
     function Microprocessor:staz()
-        self:pushAddressBus(self:pullRegister("Y"), self:pullRegister("X"))
-        self:pushDataBus(self.accumulator)
+        self:meta_writeAddressBusFromXY()
+        self:readRegister(0x0)
         self.thisMicrocomputer:writeMemory()
     end
 
     -- loads the data stored at the specified address in memory to the accumulator
     function Microprocessor:ldma()
-        self:getMemBytePair()
-        self:pushAddressBus(self:pullRegister("Y"), self:pullRegister("X"))
+        self:meta_writeMemBytePairToXY()
+        self:meta_writeAddressBusFromXY()
         self.thisMicrocomputer:readMemory()
-        self.accumulator = self:pullDataBus()
+        self:readDataPins()
+        self:writeRegister(0x0)
     end
 
     -- loads the data stored at the address specified by the Z register in memory to the accumulator
     function Microprocessor:ldaz()
-        self:pushAddressBus(self:pullRegister("Y"), self:pullRegister("X"))
+        self:meta_writeAddressBusFromXY()
         self.thisMicrocomputer:readMemory()
-        self.accumulator = self:pullDataBus()
+        self:readDataPins()
+        self:writeRegister(0x0)
     end
 
     -- push the value in the accumulator to the stack
     function Microprocessor:psha()
         self:incStackPointer()
-        self:pushAddressBus(self.stack_pointer, 0x01)
-        self:pushDataBus(self.accumulator)
+        self:readStackPointer()
+        self.address_bus = 0x0100 + self:getDataBus()
+        self:readRegister(0x0)
         self.thisMicrocomputer:writeMemory()
     end
 
     -- pops the top of the stack to the accumulator
     function Microprocessor:plla()
-        self:pushAddressBus(self.stack_pointer, 0x01)
+        self:readStackPointer()
+        self.address_bus = 0x0100 + self:getDataBus()
         self.thisMicrocomputer:readMemory()
-        self.accumulator = self:pullDataBus()
+        self:readDataPins()
+        self:writeRegister(0x0)
         self:decStackPointer()
     end
 
     function Microprocessor:tfzi()
+        self:readRegister(0x7)
+        self:writeInstructionPointerLowByte()
+        self:readRegister(0x7)
+        self:writeInstructionPointerHighByte()
     end
 
     function Microprocessor:tfiz()
+        self:readInstructionPointerLowByte()
+        self:writeRegister(0x7)
+        self:readInstructionPointerHighByte()
+        self:writeRegister(0x8)
     end
 
     function Microprocessor:tfas()
+        self:readRegister(0x0)
+        self:writeStackPointer()
     end
 
     function Microprocessor:tfsa()
+        self:readStackPointer()
+        self:writeRegister(0x0)
     end
 
     function Microprocessor:tffa()
+        self:readFlagsRegister()
+        self:writeRegister(0x0)
     end
 
     function Microprocessor:tfaf()
+        self:readRegister(0x0)
+        self:writeFlagsRegister()
     end
 
 end -- Moving Data
 
 do -- Branching
 
+    -- unconditional jump
     function Microprocessor:jump()
+        self:meta_writeMemBytePairToXY()
+        self:tfzi()
     end
 
+    -- jump if the sign is negative
     function Microprocessor:jpsn()
+        if (self:getSign() == 1) then
+            self:meta_writeMemBytePairToXY()
+            self:tfzi()
+        end
     end
 
+    -- jump if the sign is positive
     function Microprocessor:jpsp()
+        if (self:getSign() == 0) then
+            self:meta_writeMemBytePairToXY()
+            self:tfzi()
+        end
     end
 
+    -- jump if is zero
     function Microprocessor:jpez()
+        if (self:getZero() == 1) then
+            self:meta_writeMemBytePairToXY()
+            self:tfzi()
+        end
     end
 
+    -- jump if not zero
     function Microprocessor:jpnz()
+        if (self:getZero() == 0) then
+            self:meta_writeMemBytePairToXY()
+            self:tfzi()
+        end
     end
 
+    -- jump if carry
     function Microprocessor:jpic()
+        if (self:getCarry() == 1) then
+            self:meta_writeMemBytePairToXY()
+            self:tfzi()
+        end
     end
 
+    -- jump if not carry
     function Microprocessor:jpnc()
+        if (self:getCarry() == 0) then
+            self:meta_writeMemBytePairToXY()
+            self:tfzi()
+        end
     end
 
+    -- jump if overflow
     function Microprocessor:jpiv()
+        if (self:getOverflow() == 1) then
+            self:meta_writeMemBytePairToXY()
+            self:tfzi()
+        end
     end
 
+    -- jump if not overflow
     function Microprocessor:jpnv()
+        if (self:getOverflow() == 0) then
+            self:meta_writeMemBytePairToXY()
+            self:tfzi()
+        end
     end
 
     function Microprocessor:call()
+        self:meta_writeMemBytePairToXY()
+
+        self:incStackPointer()
+        self:readStackPointer()
+        self.address_bus = 0x0100 + self:getDataBus()
+        self:readInstructionPointerHighByte()
+        self.thisMicrocomputer:writeMemory()
+        
+        self:incStackPointer()
+        self:readStackPointer()
+        self.address_bus = 0x0100 + self:getDataBus()
+        self:readInstructionPointerLowByte()
+        self.thisMicrocomputer:writeMemory()
+
+        self:tfzi()
     end
 
     function Microprocessor:retn()
+        self:readStackPointer()
+        self.address_bus = 0x0100 + self:getDataBus()
+        self.thisMicrocomputer:readMemory()
+        self:readDataPins()
+        self:writeInstructionPointerLowByte()
+        self:decStackPointer()
+
+        self:readStackPointer()
+        self.address_bus = 0x0100 + self:getDataBus()
+        self.thisMicrocomputer:readMemory()
+        self:readDataPins()
+        self:writeInstructionPointerHighByte()
+        self:decStackPointer()
     end
-
-
+    
 end -- Branching
 
 do -- Microprocessor Stuff
@@ -435,27 +533,55 @@ do -- ## ALU Operations ## --
         self:setZFlagFor(result)
     end
 
-
     function Microprocessor:aluAnd()
-        local result = bit.band(self.accumulator, self.alu_temp_register)
+        self.accumulator = bit.band(self.accumulator, self.alu_temp_register)
 
-        self:setPFlagFor(result)
-        self:setZFlagFor(result)
+        self:setSFlagFor(self.accumulator)
+        self:setZFlagFor(self.accumulator)
     end
 
     function Microprocessor:aluOr()
+        self.accumulator = bit.bor(self.accumulator, self.alu_temp_register)
+
+        self:setSFlagFor(self.accumulator)
+        self:setZFlagFor(self.accumulator)
     end
 
     function Microprocessor:aluXor()
+        self.accumulator = bit.bxor(self.accumulator, self.alu_temp_register)
+
+        self:setSFlagFor(self.accumulator)
+        self:setZFlagFor(self.accumulator)
     end
 
     function Microprocessor:aluNotA()
         self.accumulator = bit.bnot(self.accumulator)
+
+        self:setSFlagFor(self.accumulator)
+        self:setZFlagFor(self.accumulator)
+    end
+
+    function Microprocessor:rotateRightThroughCarry()
+        local first_bit = bit.band(self.accumulator, 0x1)
+        self.accumulator = bit.bor(bit.rshift(self.accumulator, 1), self:getCarry() * 0x80)
+        if (first_bit == 1) then self:setCarry() else self:clearCarry() end
+
+        self:setSFlagFor(self.accumulator)
+        self:setZFlagFor(self.accumulator)
+    end
+
+    function Microprocessor:rotateLeftThroughCarry()
+        local first_bit = bit.band(self.accumulator, 0x80)
+        self.accumulator = bit.bor(bit.rshift(self.accumulator, 1), self:getCarry() * 0x1)
+        if (first_bit > 0) then self:setCarry() else self:clearCarry() end
+
+        self:setSFlagFor(self.accumulator)
+        self:setZFlagFor(self.accumulator)
     end
 
 end -- alu operations
 
-do -- ## Internal Operations ## -- Manipulating data_bus, flags, fetching data, etc
+do -- ## Micro Instructions ## -- Manipulating data_bus, flags, fetching data, etc
 
     -- called when the microprocessor is powered on 
     function Microprocessor:start()
@@ -495,6 +621,13 @@ do -- ## Internal Operations ## -- Manipulating data_bus, flags, fetching data, 
     -- increments the instruction pointer
     function Microprocessor:incInstructionPointer()
         self.instruction_pointer = self.instruction_pointer + 1
+        self.instruction_pointer = bit.band(self.instruction_pointer, 0xffff)
+    end
+
+    -- increments the instruction pointer
+    function Microprocessor:decInstructionPointer()
+        self.instruction_pointer = self.instruction_pointer - 1
+        self.instruction_pointer = bit.band(self.instruction_pointer, 0xffff)
     end
 
     -- increments the stack pointer
@@ -517,24 +650,72 @@ do -- ## Internal Operations ## -- Manipulating data_bus, flags, fetching data, 
     -- returns the data stored in the specified register5q
     function Microprocessor:readRegister(index)
         if index == 0 then
-            return self.accumulator
+            self.data_dus = self.accumulator
         else
-            return self.gp_registers[index]
+            self.data_bus = self.gp_registers[index]
         end
     end
 
     -- sets the data in the specified register
-    function Microprocessor:setRegister(index, value)
+    function Microprocessor:writeRegister(index)
         if index == 0 then
-            self.accumulator = value
+            self.accumulator = self.data_bus
         else
-            self.registers[index] = value
+            self.registers[index] = self.data_bus
         end
     end
 
     function Microprocessor:readDataPins()
         self.data_bus = self.thisMicrocomputer.data_bus;
     end
+
+    function Microprocessor:decodeRegister()
+        local hi_reg = bit.rshift(bit.band(self:getDataBus(), 0xf0), 4)
+        local lo_reg = bit.band(self:getDataBus(), 0x0f)
+
+        return lo_reg, hi_reg
+    end
+
+    function Microprocessor:writeAddressBusLowByte()
+        self.address_bus = self.data_bus + bit.band(self.address_bus, 0xff00)
+    end
+
+    function Microprocessor:writeAddressBusHighByte()
+        self.address_bus = self.data_bus * 0x0100 + bit.band(self.address_bus, 0x00ff)
+    end
+
+    function Microprocessor:writeInstructionPointerLowByte()
+        self.instruction_pointer = self.data_bus + bit.band(self.instruction_pointer, 0xff00)
+    end
+
+    function Microprocessor:writeInstructionPointerHighByte()
+        self.instruction_pointer = bit.band(self.instruction_pointer, 0x00ff) + self.data_bus * 0x0100
+    end
+
+    function Microprocessor:readInstructionPointerLowByte()
+        self.data_bus = bit.band(self.instruction_pointer, 0x00ff)
+    end
+
+    function Microprocessor:readInstructionPointerHighByte()
+        self.data_bus = bit.rshift(bit.band(self.instruction_pointer, 0xff00), 8)
+    end
+
+    function Microprocessor:writeStackPointer()
+        self.stack_pointer = self.data_bus
+    end
+
+    function Microprocessor:readStackPointer()
+        self.data_bus = self.stack_pointer
+    end
+
+    function Microprocessor:writeFlagsRegister()
+        self.flags = self.data_bus
+    end
+
+    function Microprocessor:readFlagsRegister()
+        self.data_bus = self.flags
+    end
+
 
     do -- ## Set/Clear/Get Flags ##-- 
 
@@ -591,7 +772,7 @@ do -- ## Internal Operations ## -- Manipulating data_bus, flags, fetching data, 
 
     end -- flags
 
-end -- internal operations
+end -- Micro Instructions
 
 do --## Meta functions ##-- groups of operations that are performed regularly
 
@@ -621,11 +802,18 @@ do --## Meta functions ##-- groups of operations that are performed regularly
     end
 
     -- gets a pair of bytes from memory in little endian format and stores them in the Z register
-    function Microprocessor:getMemBytePair()
+    function Microprocessor:meta_writeMemBytePairToXY()
         self:meta_getMemByte()
-        -- put data bus into the Y register
+        self:writeRegister(0x7)
         self:meta_getMemByte()
-        -- put data bus into the X register
+        self:writeRegister(0x8)
+    end
+
+    function Microprocessor:meta_writeAddressBusFromXY()
+        self:readRegister(0x7)
+        self:writeAddressBusLowByte()
+        self:readRegister(0x8)
+        self:writeAddressBusHighByte()
     end
 
     -- pushes a 16 bit value to the address bus given by a low and high byte
@@ -633,14 +821,14 @@ do --## Meta functions ##-- groups of operations that are performed regularly
         self.address_bus = lo_byte + bit.lshift(hi_byte, 8)
     end
 
-    -- pushes an 8 bit value to the data bus
-    function Microprocessor:pushDataBus(data)
-        self.data_bus = data
-    end
-
-    -- returns the value currently on the data bus
-    function Microprocessor:pullDataBus()
-        return self.data_bus
-    end
-
 end -- metafunctions
+
+-- pushes an 8 bit value to the data bus
+function Microprocessor:writeDataBus(data)
+    self.data_bus = data
+end
+
+-- returns the value currently on the data bus
+function Microprocessor:getDataBus()
+    return self.data_bus
+end
