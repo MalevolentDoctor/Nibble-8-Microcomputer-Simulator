@@ -10,13 +10,13 @@ function Workbench.new()
 
 	self.page = 0
 
-	self.crt = love.graphics.newShader("shaders/fragment/frag_crt.glsl", "shaders/vertex/vert_passthrough.glsl")
 	self.spr_workbench_pg1_bg = Sprite.new(0, 0, 1/3, 1/3, {"assets/png/workbench_pg1_hires.png"}, "linear")
+	self.temp_canvas = love.graphics.newCanvas(App.window_width, App.window_height)
 
 	return self
 end
 
-function Workbench:update()
+function Workbench:update(dt)
 	local fun_key = keyboard:getFunKey();
 
 	-- switch between the pages using function keys
@@ -26,6 +26,8 @@ function Workbench:update()
 	if self.page == 0 then
 		-- if on the first page we update the desktop screen on the computer
 		self.obj_computer:update()
+	elseif self.page == 1 then
+		self.obj_microcomputer:update(dt)
 	end
 end
 
@@ -34,5 +36,10 @@ function Workbench:draw()
 		-- if on the first page we draw the desktop screen on the computer
 		self.obj_computer:draw()
 		self.spr_workbench_pg1_bg:draw()
+	elseif self.page == 1 then
+		love.graphics.setCanvas(self.temp_canvas)
+		self.obj_microcomputer:draw()
+		love.graphics.reset()
+		love.graphics.draw(self.temp_canvas, 0, 0, 0, App.scale, App.scale)
 	end
 end
