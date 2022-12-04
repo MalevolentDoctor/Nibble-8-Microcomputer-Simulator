@@ -7,7 +7,7 @@ function Desktop.new()
 
     self.active = true;
 
-    self.win = Window.new(0, 0, App.window_width, App.window_width, 0, 0, 5, 0,
+    self.win = Window.new(self, 0, 0, App.window_width, App.window_width, 0, 0, 5, 0,
 	{"dos16", "pxl_5x7_bold", "pxl_5x7_thin"}, -- fonts
 	{{"1B1026", "1F1B24"}, {"000"}, {"B5A8C6", "ddd"}} -- colours
 	)
