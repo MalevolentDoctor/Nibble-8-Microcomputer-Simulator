@@ -1,7 +1,7 @@
 Ram = {}
 Ram.__index = Ram
 
-function Ram.new(microcomputer, size)
+function Ram.new(microcomputer, start, size)
 	local self = {}
 	setmetatable(self, Ram)
 
@@ -10,8 +10,8 @@ function Ram.new(microcomputer, size)
 
 	-- create and initialise ram table
 	self.ram = {}
-	for i = 1,size do
-		self.ram[i] = 0
+	for i = start,(start + size - 1) do
+		self.ram[i] = math.random(0,255)
 	end
 
 	return self
