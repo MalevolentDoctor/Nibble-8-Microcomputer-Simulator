@@ -3,11 +3,12 @@ Window = {}
 Window.__index = Window
 
 -- set the parameters for the window (semi-constant)
-function Window.new(x, y, w, h, r, exbuff, inbuff, bdr, fonts, colours)
+function Window.new(other, x, y, w, h, r, exbuff, inbuff, bdr, fonts, colours)
     local self = {}
     setmetatable(self, Window)
 
     self.active = true
+    self.other = other
 
     -- window size and shape
     self.x = x or 0
@@ -139,4 +140,7 @@ function Window:getHeight()
     love.graphics.setCanvas(parent_canvas)
 
     return self.current_y + self.ext_buffer + self.int_buffer
+end
+
+function Window:draw()
 end
