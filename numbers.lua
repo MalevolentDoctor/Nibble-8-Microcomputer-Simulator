@@ -174,14 +174,16 @@ function numbers.toBin(num, bits)
     return outnum, oversize
 end
 
--- converts a binary value (no suffix) to decimal (as a number)
-function numbers.binToDec(bin)
-    local num = 0;
-    local mul = 1;
-    local digits = string.len(bin);
-    for i = digits,1,-1 do
-        num = num + tonumber(string.sub(bin, i, i))*mul;
-        mul = mul + mul;
+function numbers.tonumber(str)
+    local num_base_name = string.sub(str, -1, -1)
+    local num_val = string.sub(str, 1, -2)
+
+    local base_names_lookup = {b = 2, c = 8, d = 10, h = 16}
+    local base = base_names_lookup[num_base_name]
+
+    if base ~= nil then
+        return tonumber(num_val, base)
+    else    
+        return nil
     end
-    return num
 end
