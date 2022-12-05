@@ -142,8 +142,6 @@ function Console.new(parentComputer, x, y, w, h, shader_adjust)
             end
         end
     end
-
-    print("Created console successfully")
     return self
 end
 
