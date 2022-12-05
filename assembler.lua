@@ -120,6 +120,49 @@ function Assembler:assemble(code, filename)
     return self.assembler_report
 end
 
+-- for the four character functions, we are sure that the expected input is given, to some degree
+-- Immediate values are denoted by #, labels are denoted by $, otherwise if A, B, C, D, H, L, X, Y are given they are assumed to be registers
+-- @ denotes a memory address e.g. @#100110b
+-- arguments are seperated by a space
+-- ; denotes a comment
+-- :label: assigns a label
+-- .option defines an assembler option
+-- number formats binary (b), octal (c), decimal (d) and hexadecimal (h) are supported, written in the format e.g. #1fh (immediate hexadecimal value 1f)
+
+-- some examples
+-- :var: #10d ; this essentially is a variable named "var" with the value 10
+
+do -- Arithmetic Functions
+
+    -- adds two numbers together with a carry
+    function Assembler:adc(line, args)
+        -- check the arguments
+        local arg_vals, arg_types = self:checkArguments(line, args, {immediate = 8, register = 4}, {})
+
+        -- call the appropriate function
+        if arg_types[1] == "register" then
+            self:acra(line, arg_vals)
+        elseif arg_types[1] == "immediate" then
+            self:acia(line, arg_vals)
+        end
+
+    end
+
+    -- adds the value stored in a register to the value stored in the accumulator,
+    -- storing the result in the accumulator
+    function Assembler:acra(line, args)
+        local opcode = numbers.toBin()
+    end
+
+    -- adds an immediate value to the value stored in the accumulator,
+    -- storing the result in the accumulator
+    function Assembler:acia(line, args)
+        
+    end
+
+end -- Arithmetic Functions
+
+
 function Assembler:mov(line, args)
     -- check the number of arguments provided
     if not self:checkNumArgs(line, args, 3) then return self.assembler_report end
@@ -217,4 +260,99 @@ end
 function Assembler:assembleMsg(str)
     table.insert(self.assembler_report, self.assembler_report.n + 1, str);
     self.assembler_report.n = self.assembler_report.n + 1;
+end
+
+
+function Assembler:checkArguments(line, args, allowed_arg_1, allowed_arg_2)
+    -- argument types: "register", "immediate", "address"
+    -- allowed_arg = {"immediate" = 8} (allowed an 8 bit immediate value)
+    -- return the types and sizes of the two arguments
+    -- {arg1 = 8, arg2 = 4} or something like that
+    -- # denotes immediate
+    -- @ denotes address
+    -- A, B, C etc denote registers
+    -- args is just the table of arguments not the opcode
+    -- label, if defined, should always be safe to use
+    -- if not typed, the value is assumed to be a label, this is equivelant to an address
+
+    local arg_place = {"first", "second"}
+    local allowed_arg = {allowed_arg_1, allowed_arg_2}
+
+    local arg_vals = {}
+    local arg_types = {}
+
+    for i = 1,2 do
+        if (#allowed_arg[i] > 0 and args[i] == nil) then -- no argument provided, one desired
+            self:assembleMsg("Error [line " .. line .. "]: Expected " .. arg_place[i] .. " argument, none provided")
+
+        elseif (#allowed_arg[i] == 0) then -- argument provided, none desired
+            self:assembleMsg("Warning [line " .. line .. "]: No " .. arg_place[i] .. " argument expected, it will be ignored")
+
+        elseif (string.sub(arg[i], 1, 1) == "#") then -- immediate value
+            local bit_count = allowed_arg[i].immediate
+            if bit_count ~= nil then
+                local val = numbers.tonumber()
+                if (val ~= nil) then
+                    if (val < math.pow(2,bit_count)) then
+                        arg_vals[i] = val
+                        arg_types[i] = "immediate"
+                    else
+                        self:assembleMsg("Warning [line " .. line .. "]: Value in the " .. arg_place[i] .. 
+                                         " argument exceeds the maximum number of bytes, it will be truncated")
+                        arg_vals[i] = val
+                        arg_types[i] = "immediate"
+                    end
+                else
+                    self:assembleMsg("Error [line " .. line .. "]: The numeric expression in the " .. arg_place[i] .. " argument is malformed")
+
+                end
+            else
+                self:assembleMsg("Error [line " .. line .. "]: Operator does not support an immediate value for the " .. arg_place[i] .. " argument")
+            end
+
+        elseif (string.sub(arg[i], 1, 1) == "@") then -- address value
+            local bit_count = allowed_arg[i].address
+            if bit_count ~= nil then
+                local val = numbers.tonumber()
+                if (val ~= nil) then
+                    if (val < math.pow(2,bit_count)) then
+                        arg_vals[i] = val
+                        arg_types[i] = "address"
+                    else
+                        self:assembleMsg("Warning [line " .. line .. "]: Value in the " .. arg_place[i] .. 
+                                         " argument exceeds the maximum number of bytes, it will be truncated")
+                        arg_vals[i] = val
+                        arg_types[i] = "address"
+                    end
+                else
+                    self:assembleMsg("Error [line " .. line .. "]: The numeric expression in the " .. arg_place[i] .. " argument is malformed")
+                end
+            else
+                self:assembleMsg("Error [line " .. line .. "]: Operator does not support an address value for the " .. arg_place[i] .. " argument")
+            end
+
+        elseif (self.reg_alpha[arg[i]] ~= nil) then -- register
+            if allowed_arg[i].register ~= nil then
+                arg_vals[i] = self.reg_alpha[arg[i]]
+                arg_types[i] = "register"
+            else
+                self:assembleMsg("Error [line " .. line .. "]: Operator does not support a register value for the " .. arg_place[i] .. " argument")
+            end
+
+        else -- label
+            if allowed_arg[i].address ~= nil then
+                local label_val = self.labels[arg[i]]
+                if label_val ~= nil then
+                    arg_vals[i] = label_val
+                    arg_types[i] = "address"
+                else
+                    self:assembleMsg("Error [line " .. line .. "]: Label " .. arg[i] .. " is not defined anywhere in the program")
+                end
+            end
+        end
+    end
+
+    return arg_vals, arg_types
+
+
 end
