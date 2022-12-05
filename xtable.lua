@@ -81,21 +81,21 @@ function table.textLoad(fname)
     end
 end
 
-function table.subtable(tab, start, fin)
+function table.subtable(tbl, start, fin)
     local new_table = {};
     if fin < 0 then
-        fin = #tab + fin + 1;
+        fin = #tbl + fin + 1;
     end
 
     for i = start,fin do
-        new_table[i] = tab[i];
+        new_table[i] = tbl[i];
     end
     return new_table
 end
 
-function table.copy(tab)
+function table.copy(tbl)
     local new_table = {}
-    for i,v in pairs(tab) do
+    for i,v in pairs(tbl) do
         if type(v) == "function" then
             -- don't copy functions
         elseif type(v) == "table" then
