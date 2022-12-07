@@ -93,6 +93,15 @@ function table.subtable(tbl, start, fin)
     return new_table
 end
 
+function table.getLength(tbl)
+    local len = 0
+    for _ in pairs(tbl) do
+        len = len + 1
+    end
+
+    return len
+end
+
 function table.copy(tbl)
     local new_table = {}
     for i,v in pairs(tbl) do
