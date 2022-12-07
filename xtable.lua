@@ -81,6 +81,47 @@ function table.textLoad(fname)
     end
 end
 
+-- Load standard text format
+function table.textLoadBinary(fname)
+    local f_info = {};
+    print(fname)
+    f_info = love.filesystem.getInfo(fname, f_info)
+    if f_info ~= nil then
+        if f_info.type == "file" then -- file exists, so we can try to read from it
+            local tbl = {n = 0}
+
+            for line in love.filesystem.lines(fname) do
+                -- split the string into 8 byte sections
+                local bytes_per_line = 4
+
+                local str_len = string.len(line)
+                local num_bytes = math.ceil(str_len/8)
+                local lines = math.ceil(num_bytes/bytes_per_line)
+
+                for i = 0,(lines - 1) do
+                    local str = ""
+                    for j = 0,(bytes_per_line - 1) do
+                        local index = i * bytes_per_line * 8 + j * 8 + 1
+                        str = str .. string.sub(line, index, index + 7) .. " "
+                    end
+                    tbl.n = tbl.n + 1;						-- increment table index
+                    tbl[tbl.n] = string.sub(str, 1, -2)		-- add string to table
+                end
+            end
+
+            return tbl, nil
+        else
+            -- file does not exist but there may be a folder or something else of the same name
+            local err_msg = "Error: file '" .. fname .. "' does not exist"
+            return nil, err_msg
+        end
+    else
+        -- file does not exist
+        local err_msg = "Error: file '" .. fname .. "' does not exist"
+        return nil, err_msg
+    end
+end
+
 function table.subtable(tbl, start, fin)
     local new_table = {};
     if fin < 0 then
