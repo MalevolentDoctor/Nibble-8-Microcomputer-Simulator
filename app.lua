@@ -1,5 +1,5 @@
 App = {
-	scale = 2,
+	scale = 1,
 }
 
 function App.init()
