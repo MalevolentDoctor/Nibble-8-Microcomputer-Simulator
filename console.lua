@@ -49,7 +49,7 @@ function Console.new(parentComputer, x, y, w, h, shader_adjust)
             "",
             "Parameters:",
             "    <out file> file to save the machine code to, default", 
-            "        extension .bin",
+            "        extension .nib",
             "    <in file>  (optional) file to load assembly code from"
         },
         clc = {
@@ -117,7 +117,7 @@ function Console.new(parentComputer, x, y, w, h, shader_adjust)
     }
 
     -- window parameters
-    self.win = Window.new(self, self.x, self.y, self.w, self.h, 0, 20, 5, 0,
+    self.win = Window.new(self, self.x, self.y, self.w, self.h, 0, 40, 10, 0,
     {"dos16", "pxl_5x7_bold", "pxl_5x7_bold"}, -- fonts
     {{"7FB6CA", "3C5A65"}, {"000"}, {"ccc", "ddd"}} -- colours
     )
@@ -131,7 +131,7 @@ function Console.new(parentComputer, x, y, w, h, shader_adjust)
         self:drawBackground()
     
         -- draw console text
-        local bottom_line = console.top_line + console.lines + 1
+        local bottom_line = console.top_line + console.lines
         for i = console.top_line, bottom_line do
             if console.text[i] ~= nil then
                 if console.text[i]:sub(1,2) == "<<" then 
@@ -302,14 +302,87 @@ function Console:interpreter(command_string)
     elseif command[1] == "clc"     then self:clearConsole()
     elseif command[1] == "delete"  then self:deleteFile(command)
     elseif command[1] == "edit"    or command[1] == "!edit"  then self:openEditor(command)
+    elseif command[1] == "flash"   then self:programRom(command)
     elseif command[1] == "help"    then self:help(command)
     elseif command[1] == "list"    then self:listFiles(command)
     elseif command[1] == "load"    or command[1] == "!load"  then self:loadFile(command)
     elseif command[1] == "new"     or command[1] == "!new"   then self:newFile(command)
-    elseif command[1] == "program" then self:programRom(command)
+    elseif command[1] == "ram"     then self:displayRam(command)
+    elseif command[1] == "rom"     then self:displayRom(command)
     elseif command[1] == "save"    or command[1] == "!save"  then self:saveFile(command)
     else -- Error failed to find command
         self:consolePrint("Error: No command \"" .. command[1] .. "\" found")
+    end
+end
+
+-- assembles the code in the editor or loaded from a file
+function Console:buildFile(command)
+    local ifname = command[2] -- input file
+    local ofname = command[3] -- output file
+
+    local compile_message;
+
+    -- check if too many arguments were provided
+    if command[4] ~= nil then
+        self:consolePrint("Error: Too many arguments provided"); return;
+    end
+
+    -- check if any file names were provided
+    if command[2] == nil then
+        self:consolePrint("Error: No file name(s) provided"); return;
+    end
+
+    -- check if one or two file names were provided
+    if command[3] == nil then
+        -- only one file name provided, assumed to be the output
+        ofname = ifname -- rename for clarity
+
+        -- append .nib extension if none provided
+        if not ofname:includes("%.") then ofname = ofname .. ".nib" end
+        compile_message = Assembler:assemble(self.editor.text, "editor/saves/" .. ofname)
+    else
+        -- if two files are provided then we load locally then build
+        if not ifname:includes("%.") then ifname = ifname .. ".txt" end
+        if not ofname:includes("%.") then ofname = ofname .. ".nib" end
+
+        local ifile_text, err = table.textLoad("editor/saves/" .. ifname)
+        if err == nil then
+            compile_message = Assembler:assemble(ifile_text, "editor/saves/" .. ofname)
+        else
+            self:consolePrint("Error: failed to load file " .. ifname)
+            return false
+        end
+    end
+
+    -- print out any errors returned by the compiler
+    if compile_message ~= nil then
+        for i = 1,compile_message.n do
+            self:consolePrint(compile_message[i])
+        end
+        self:updateScrollPosition();
+    end
+end
+
+-- clears all the text from the console
+function Console:clearConsole()
+    -- set empty parameters so that they will correct when iterated by consoleEnter
+    self.text = {n = 0}
+    self.vert_cursor = 0;
+    self.horz_cursor = 0;
+    
+    -- reset the screen to the top
+    self.top_line = 1;
+end
+
+-- deletes the specified file
+function Console:deleteFile(command)
+    local dir = "editor/saves"
+    local ok = love.filesystem.remove(dir .. "/" .. command[2])
+    if not ok then
+        self:consolePrint("Error: failed to delete " .. command[2] .. ", ensure the file exists")
+        return false
+    else
+        return true
     end
 end
 
@@ -347,6 +420,205 @@ function Console:openEditor(command)
     self.active = false
 
     return true
+end
+
+function Console:programRom(command)
+    local fname = command[2] -- file name
+    local state, tbl;
+
+    -- check that the function has not recieved too many arguments
+    if command[3] ~= nil then
+        self:consolePrint("Error: Too many arguments"); return false;
+    end
+
+    -- check that a file name was provided
+    if command[2] == nil then
+        self:consolePrint("Error: No file name provided"); return false;
+    end
+
+    -- append extension .nib if none provided
+    if not command[2]:includes("%.") then fname = fname .. ".nib" end
+
+    -- load the data from the save file, state contains any errors that occured
+    tbl, state = table.textLoad("editor/saves/" .. fname)
+
+
+    if state ~= nil then
+        -- if errors occured, print the errors to the console
+        self:consolePrint(state)
+        return false
+    elseif tbl ~= nil then
+        -- the Rom odject we are writing to
+        local thisRom = self.thisComputer.thisWorkbench.objMicrocomputer.objRom
+
+        -- extract metadata information
+        local binary = tbl[1]
+        local program_bytes = tonumber(string.sub(binary,1,16),2)
+        local start_index = string.sub(binary, 17,32)
+        local start_index_num = tonumber(start_index, 2)
+
+        local end_index_num = start_index_num + program_bytes - 1
+
+        print("start index: " .. start_index)
+        print("program bytes: " .. program_bytes)
+        print("end index: " .. end_index_num)
+
+        -- check that the start index is valid
+        if (thisRom.rom[start_index_num] == nil) then
+            self:consolePrint("Error: Start index is not in the address space of the ROM"); return false;
+        end
+
+        -- check if the size is valid
+        if (thisRom.size < (program_bytes + 4)) then
+            self:consolePrint("Error: The program is too large to be loaded into this ROM"); return false;
+        end
+
+        local program = string.sub(binary, 33, -1)
+
+        local counter = 0
+        for i = start_index_num,end_index_num do
+            local string_index = 8*counter + 1
+            print(tonumber(string.sub(program, string_index, string_index + 7),2))
+            thisRom.rom[i] = tonumber(string.sub(program, string_index, string_index + 7),2)
+            counter = counter + 1
+        end
+
+        -- put the starting address in the ROM (this is in big endian)
+        thisRom.rom[0xfffc] = tonumber(string.sub(start_index, -8, -1), 2)
+        thisRom.rom[0xfffd] = tonumber(string.sub(start_index, 1, 8), 2)
+
+        return true
+    end
+end
+
+-- prints help text for specified commands or a summary of all
+function Console:help(command)
+    -- if no specific command provided, give a summary of commands
+    if command[2] == nil then
+        self:consolePrint("     -- Summary of Commands --")
+        for _,v in ipairs(self.help_text.help_list) do
+            self:consolePrint(self.help_text[v][1])
+        end
+        -- print a couple of the relevant controls
+        self:consolePrint("")
+        self:consolePrint("     -- Controls --")
+        self:consolePrint("ctrl + arrow keys    scroll console")
+        self:consolePrint("")
+        self:consolePrint("use `help <command>' to see more details")
+    elseif self.help_text[command[2]] ~= nil and command[2] ~= "help_list" then
+        -- if the command exists then
+        self:consolePrint(table.subtable(self.help_text[command[2]], 2, -1))
+    else
+        -- if the entered command is not valid
+        self:consolePrint("Error: `" .. command[2] .. "' is not a recognised command")
+    end
+end
+
+-- lists files in the current directory (currently this is just editor/saves)
+function Console:listFiles(command)
+    local dir = "editor/saves"
+    local files = love.filesystem.getDirectoryItems(dir)
+    for _,v in ipairs(files) do
+        self:consolePrint(v)
+    end
+end
+
+-- Load data from a file into the editor
+function Console:loadFile(command)
+    local fname = command[2] -- file name
+    local state, tab;
+
+    -- Check if there is a file open in the editor or it is safe to overwrite
+    if command[1] == "load" and self.saved == false then
+        self:consolePrint("Error: File not saved, use '!load' to override"); return false;
+    end
+
+    -- check that the function has not recieved too many arguments
+    if command[3] ~= nil then
+        self:consolePrint("Error: Too many arguments"); return false;
+    end
+
+    -- check that a file name was provided
+    if command[2] == nil then
+        self:consolePrint("Error: No file name provided"); return false;
+    end
+
+    -- append extension .txt if none provided
+    if not command[2]:includes("%.") then fname = fname .. ".txt" end
+
+    -- load the data from the save file, state contains any errors that occured
+    if (string.sub(fname, -4, -1) == ".nib") then
+        tab, state = table.textLoadBinary("editor/saves/" .. fname)
+    else 
+        tab, state = table.textLoad("editor/saves/" .. fname)
+    end
+
+    if state ~= nil then
+        -- if errors occured, print the errors to the console
+        self:consolePrint(state)
+        return false
+    else
+        -- if an editor is running then we load the data into the editor
+        self.objEditor.text = tab
+        self.objEditor.file_name = fname
+        self.objEditor:reset()	-- reset the position of the editor
+        self:consolePrint(fname .. " loaded successfully")	-- report successfull loading
+        return true
+    end
+end
+
+-- create a new file in the editor (replacing the old one)
+function Console:newFile(command)
+    -- throw an error if there is currently an unsaved file in the editor
+    if command[1] == "new" and self.objEditor.saved == false then
+        self:consolePrint("Warning: File not saved, use '!new' to override"); return;
+    end
+
+    -- check that no additional arguments were provided
+    if command[2] ~= nil then
+        self:consolePrint("Error: Too many arguments provided"); return;
+    end
+
+    -- resetting the editor to a blank slate
+    self.objEditor.text = {n = 1, ""};
+    self.objEditor.file_name = "Untitled"
+    self.objEditor:reset()
+end
+
+-- displays the constent of the microcomputer's RAM in the console
+function Console:displayRam(command)
+    local thisRam = self.thisComputer.thisWorkbench.objMicrocomputer.objRam
+
+    local vals_per_row = 16
+
+    for i = 0x0000,(thisRam.size - 1),vals_per_row do
+        local str = "0x" .. bit.tohex(i,4):upper() .. ": "
+        for j = i,(i + vals_per_row - 1) do
+            local val_in_ram = thisRam.ram[j]
+            if val_in_ram ~= nil then
+                str = str .. bit.tohex(val_in_ram,2):upper() .. " "
+            end
+        end
+        self:consolePrint(str)
+    end
+end
+
+-- display the contents of the microcomputer's ROM in the console
+function Console:displayRom(command)
+    local thisRom = self.thisComputer.thisWorkbench.objMicrocomputer.objRom
+
+    local vals_per_row = 16
+
+    for i = thisRom.start,0xffff,vals_per_row do
+        local str = "0x" .. bit.tohex(i,4):upper() .. ": "
+        for j = i,(i + vals_per_row - 1) do
+            local val_in_rom = thisRom.rom[j]
+            if val_in_rom ~= nil then
+                str = str .. bit.tohex(val_in_rom,2):upper() .. " "
+            end
+        end
+        self:consolePrint(str)
+    end
 end
 
 -- Save the data currently in the editor to a file
@@ -403,167 +675,6 @@ function Console:saveFile(command)
     else
         -- throw error if the file exists but we are not safe to overwrite
         self:consolePrint("Error: File '" .. fname .. "' already exists, use !save to overwrite")
-    end
-end
-
--- Load data from a file into the editor
-function Console:loadFile(command)
-    local fname = command[2] -- file name
-    local state, tab;
-
-    -- Check if there is a file open in the editor or it is safe to overwrite
-    if command[1] == "load" and self.saved == false then
-        self:consolePrint("Error: File not saved, use '!load' to override"); return false;
-    end
-
-    -- check that the function has not recieved too many arguments
-    if command[3] ~= nil then
-        self:consolePrint("Error: Too many arguments"); return false;
-    end
-
-    -- check that a file name was provided
-    if command[2] == nil then
-        self:consolePrint("Error: No file name provided"); return false;
-    end
-
-    -- append extension .txt if none provided
-    if not command[2]:includes("%.") then fname = fname .. ".txt" end
-
-    -- load the data from the save file, state contains any errors that occured
-    tab, state = table.textLoad("editor/saves/" .. fname)
-    if state ~= nil then
-        -- if errors occured, print the errors to the console
-        self:consolePrint(state)
-        return false
-    else
-        -- if an editor is running then we load the data into the editor
-        self.objEditor.text = tab
-        self.objEditor.file_name = fname
-        self.objEditor:reset()	-- reset the position of the editor
-        self:consolePrint(fname .. " loaded successfully")	-- report successfull loading
-        return true
-    end
-end
-
--- create a new file in the editor (replacing the old one)
-function Console:newFile(command)
-    -- throw an error if there is currently an unsaved file in the editor
-    if command[1] == "new" and self.objEditor.saved == false then
-        self:consolePrint("Warning: File not saved, use '!new' to override"); return;
-    end
-
-    -- check that no additional arguments were provided
-    if command[2] ~= nil then
-        self:consolePrint("Error: Too many arguments provided"); return;
-    end
-
-    -- resetting the editor to a blank slate
-    self.objEditor.text = {n = 1, ""};
-    self.objEditor.file_name = "Untitled"
-    self.objEditor:reset()
-end
-
--- assembles the code in the editor or loaded from a file
-function Console:buildFile(command)
-    local ifname = command[2] -- input file
-    local ofname = command[3] -- output file
-
-    local compile_message;
-
-    -- check if too many arguments were provided
-    if command[4] ~= nil then
-        self:consolePrint("Error: Too many arguments provided"); return;
-    end
-
-    -- check if any file names were provided
-    if command[2] == nil then
-        self:consolePrint("Error: No file name(s) provided"); return;
-    end
-
-    -- check if one or two file names were provided
-    if command[3] == nil then
-        -- only one file name provided, assumed to be the output
-        ofname = ifname -- rename for clarity
-
-        -- append .bin extension if none provided
-        if not ofname:includes("%.") then ofname = ofname .. ".bin" end
-        compile_message = Assembler:assemble(self.editor.text, "editor/saves/" .. ofname)
-    else
-        -- if two files are provided then we load locally then build
-        if not ifname:includes("%.") then ifname = ifname .. ".txt" end
-        if not ofname:includes("%.") then ofname = ofname .. ".bin" end
-
-        local ifile_text, err = table.textLoad("editor/saves/" .. ifname)
-        if err == nil then
-            compile_message = Assembler:assemble(ifile_text, "editor/saves/" .. ofname)
-        else
-            self:consolePrint("Error: failed to load file " .. ifname)
-            return false
-        end
-    end
-
-    -- print out any errors returned by the compiler
-    if compile_message ~= nil then
-        for i = 1,compile_message.n do
-            self:consolePrint(compile_message[i])
-        end
-        self:updateScrollPosition();
-    end
-end
-
--- deletes the specified file
-function Console:deleteFile(command)
-    local dir = "editor/saves"
-    local ok = love.filesystem.remove(dir .. "/" .. command[2])
-    if not ok then
-        self:consolePrint("Error: failed to delete " .. command[2] .. ", ensure the file exists")
-        return false
-    else
-        return true
-    end
-end
-
--- lists files in the current directory (currently this is just editor/saves)
-function Console:listFiles(command)
-    local dir = "editor/saves"
-    local files = love.filesystem.getDirectoryItems(dir)
-    for _,v in ipairs(files) do
-        self:consolePrint(v)
-    end
-end
-
--- clears all the text from the console
-function Console:clearConsole()
-    -- set empty parameters so that they will correct when iterated by consoleEnter
-    self.text = {n = 0}
-    self.vert_cursor = 0;
-    self.horz_cursor = 0;
-    
-    -- reset the screen to the top
-    self.top_line = 1;
-end
-    
-
--- prints help text for specified commands or a summary of all
-function Console:help(command)
-    -- if no specific command provided, give a summary of commands
-    if command[2] == nil then
-        self:consolePrint("     -- Summary of Commands --")
-        for _,v in ipairs(self.help_text.help_list) do
-            self:consolePrint(self.help_text[v][1])
-        end
-        -- print a couple of the relevant controls
-        self:consolePrint("")
-        self:consolePrint("     -- Controls --")
-        self:consolePrint("ctrl + arrow keys    scroll console")
-        self:consolePrint("")
-        self:consolePrint("use `help <command>' to see more details")
-    elseif self.help_text[command[2]] ~= nil and command[2] ~= "help_list" then
-        -- if the command exists then
-        self:consolePrint(table.subtable(self.help_text[command[2]], 2, -1))
-    else
-        -- if the entered command is not valid
-        self:consolePrint("Error: `" .. command[2] .. "' is not a recognised command")
     end
 end
 
