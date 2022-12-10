@@ -1,259 +1,278 @@
--- CHANGES: checkForceBits should never get a non numeric value, make forceBits return nil
---			for the number if it contains non-numeric characters
+local utf8 = require("utf8")
+local opcodes = require("opcodes")
 
 Assembler = {
-    opcode_table = {
-        noop = 0x00, halt = 0x01, rstt = 0x02, brek = 0x03, clrz = 0x04, clrs = 0x05, clrp = 0x06, clrc = 0x07,
-        clri = 0x08, clrv = 0x09, setz = 0x0A, sets = 0x0B, setp = 0x0C, setc = 0x0D, seti = 0x0E, setv = 0x0F,
-        anra = 0x10, anrr = 0x11, ania = 0x12, anir = 0x13, anma = 0x14, anaz = 0x15, anrz = 0x16,
-                                                                                                   nota = 0x1F,
-        orra = 0x20, orrr = 0x21, oria = 0x22, orir = 0x23, orma = 0x24, oraz = 0x25, orrz = 0x26,
-        xora = 0x28, xorr = 0x29, xoia = 0x2A, xoir = 0x2B, xoma = 0x2C, xoaz = 0x2D, xorz = 0x2E,
-        lsra = 0x30, lsrc = 0x31,              lsla = 0x33, lslc = 0x34,              asra = 0x36, asla = 0x37,
-                     rora = 0x39, rorc = 0x3A, rort = 0x3B,              rola = 0x3D, rolc = 0x3E, rolt = 0x3F,
-        mvrr = 0x41, mvia = 0x42, mvir = 0x43,                                                     mviz = 0x47,
-        tfzi = 0x48, tfiz = 0x49, tfzs = 0x4A, tfsz = 0x4B, tffa = 0x4C, tffr = 0x4D, tfaf = 0x4E, tfef = 0x4F,
-        stza = 0x50, stzr = 0x51,                           stma = 0x54, staz = 0x55, strz = 0x56,
-        ldza = 0x58, ldzr = 0x59,                           ldma = 0x5C, ldaz = 0x5D, ldrz = 0x5E,
-        jump = 0x60,              jpsn = 0x62, jpsp = 0x63,              jpez = 0x65, jpnz = 0x66,
-        jppo = 0x68, jppe = 0x69,              jpic = 0x6B, jpnc = 0x6C,              jpiv = 0x6E, jpnv = 0x6F,
-        call = 0x70,              clsn = 0x72, clsp = 0x73,              clez = 0x75, clnz = 0x76,
-        clpo = 0x78, clpe = 0x79,              clic = 0x7B, clnc = 0x7C,              cliv = 0x7E, clnv = 0x7F,
-        retn = 0x80,              rtsn = 0x82, rtsp = 0x83,              rtez = 0x85, rtnz = 0x86,
-        rtpo = 0x88, rtpe = 0x89,              rtic = 0x8B, rtnc = 0x8C,              rtiv = 0x8E, rtnv = 0x8F,
-        inaa = 0x90, inrr = 0x91,                           inmm = 0x94, inzz = 0x95, inmz = 0x96,
-        dcaa = 0x98, dcrr = 0x99,                           dcmm = 0x9C, dczz = 0x9D, dcmz = 0x9E,
-        adra = 0xA0, adrr = 0xA1, adia = 0xA2, adir = 0xA3, adma = 0xA4, adaz = 0xA5, adrz = 0xA6,
-        acra = 0xA8, acrr = 0xA9, acia = 0xAA, acir = 0xAB, acma = 0xAC, acaz = 0xAD, acrz = 0xAE,
-        sbra = 0xB0, sbrr = 0xB1, sbia = 0xB2, sbir = 0xB3, sbma = 0xB4, sbaz = 0xB5, sbrz = 0xB6,
-        scra = 0xB8, scrr = 0xB9, scia = 0xBA, scir = 0xBB, scma = 0xBC, scaz = 0xBD, scrz = 0xBE,
-        cpra = 0xC0, cprr = 0xC1, cpia = 0xC2, cpir = 0xC3, cpma = 0xC4, cpaz = 0xC5, cprz = 0xC6, cpza = 0xC7,
-                                                                                                   cpzr = 0xCF,
-        psha = 0xD0, pshr = 0xD1, pshf = 0xD2,
-        plla = 0xD8, pllr = 0xD9, pllf = 0xDA,                                                     popd = 0xDF,
-        adza = 0xE0, adzr = 0xE1, acza = 0xE2, aczr = 0xE3, sbza = 0xE4, sbzr = 0xE5, scza = 0xE6, sczr = 0xE7,
-        inzm = 0xE8, dczm = 0xE9, anza = 0xEA, anzr = 0xEB, orza = 0xEC, orzr = 0xED, xoza = 0xEE, xozr = 0xEF
+    short_mnemonic_table = {
+        adc = -1, sbc = -1, ini = "inip", dci = "dcip", ins = "insp", dcs = "dcsp", clc = "clrc", cli = "clri", 
+        cls = "clrs", clv = "clrv", clz = "clrz", stc = "setc", sti = "seti", sts = "sets", stv = "setv", stz = "setz", 
+        ["and"] = "ana", ora = -1, xor = -1, ["not"] = "nota", cmp = -1, rar = "rort", ral = "rolt"
     },
 
-    reg_alpha = {A = 0x0, B = 0x1, C = 0x2, D = 0x3, E = 0x4, G = 0x5, H = 0x6, X = 0x7, Y = 0x8},
+    oc55 = {noop=0, halt=0, rstt=0, brek=0, mvrr=0, stma=0, staz=0, ldma=0, ldaz=0, psha=0, plla=0, acra=0, acia=0,
+            scra=0, scia=0, inip=0, dcip=0, insp=0, dcsp=0, anra=0, ania=0, orra=0, oria=0, xora=0, xoia=0, nota=0,
+            rort=0, rolt=0, jump=0, jpsn=0, jpsp=0, jpez=0, jpnz=0, jpic=0, jpnc=0, jpiv=0, jpnv=0, call=0, retn=0,
+            clrz=0, clrs=0, clrc=0, clri=0, clrv=0, setz=0, sets=0, setc=0, seti=0, setv=0, tfzi=0, tfiz=0, tfas=0,
+            tfsa=0, tffa=0, tfaf=0},
+
+    reg_alpha = {A = 0x0, B = 0x1, C = 0x2, D = 0x3, E = 0x4, H = 0x5, L = 0x6, X = 0x7, Y = 0x8},
     machine_code = "",
-    program_line = 1,
+    program_index = 1,
+    start_index = 0xfffc,
     assembler_report = {n = 0},
-    labels = {};
+    labels = {},
+    limitation = "oc55"
 }
 
 function Assembler:assemble(code, filename)
-
-    for line = 1, code.n do -- get all labels
-        -- clean up white space
-        local args = code[line]:strip():split();
-
-        -- skip if the line is blank
-        if args.n == 0 then goto next_line end
-
-        -- check if the line is a label
-        if args[1]:sub(1,1) == ":" then
-            local label_name = string.upper(args[1]:sub(2,-1)); -- force upper case for label			
-            if self.labels[label_name] == nil then
-                -- get the position in the program as a 16bit binary number
-                 local pline, plineerr = numbers.setBits(numbers.decToBin(self.program_line), 16);
-
-                -- error checking (this may change)
-                if not self:checkForceBits(line, pline, plineerr) then 
-                    return self.assembler_report
-                else
-                    -- save the label name (key) and the program_line (value)
-                     self.labels[label_name] = pline
-                    goto next_line -- jump to the next line in the code
-                end
-            else
-                -- if the label_name ~= nil then there exists a label with this name 
-                -- and there will be undeterministic behaviour so throw an error
-                local err_msg = "Fatal [line " .. line .. "]: Label ':" .. label_name .. "' defined multiple times"
-                self:assembleMsg(err_msg);
-                return self.assembler_report;
-            end
-        else
-            -- if not a label then just jump to the next line
-            goto next_line
-        end
-
-        self.program_line = self.program_line + 1;
-        ::next_line::
+    -- debug code input
+    print("\ncode input: ")
+    for k,v in pairs(code) do
+        print(k, v)
     end
-
-    print("got labels")
 
     for line = 1,code.n do -- assemble the rest of the lines
-        -- clean up white space
-        -- print(code[line])
-        local args = code[line]:strip():split();
+        print("\ncode at line " .. tostring(line) .. ": " .. code[line])
+
+
+        local inputs = code[line]:strip():split();
 
         -- skip if the line is blank
-        if args.n == 0 then goto next_line end
-
-        -- check if the line is a comment or label
-        if args[1]:sub(1,1) == ";" then goto next_line end
-        if args[1]:sub(1,1) == ":" then goto next_line end
-
-        -- call a function of the argument provided
-        if args[1] ~= nil then
-            if (self[args[1]] ~= nil) then
-                self[args[1]:lower()](self, line, args)
-            else
-                local err_msg = "Fatal [line " .. line .. "]: Mnemonic `" .. args[1]:upper() .. "' not recognised"
-                self:assembleMsg(err_msg);
-                return self.assembler_report;
-            end
-        else
+        if table.getLength(inputs) == 0 then
+            print("blank line, jumping to the end of the loop")
             goto next_line
         end
 
-        self.program_line = self.program_line + 1;
-        print(self.machine_code)
+        -- Assembler parameters
+        if (string.sub(inputs[1], 1, 1) == ".") then
+            self:handleAssemblerParams(line, inputs)
+        end
+
+        -- skip over argument if it is a label
+        if string.sub(inputs[1], 1, 1) == ":" then
+            if string.sub(inputs[1], -1, -1) == ":" then
+                local label_name = string.sub(inputs[1], 2, -2)
+                print("saving label: " .. label_name)
+                if self.labels[label_name] ~= nil then
+                    self:assembleMsg("Error [line " .. line .. "]: This label has already been defined")
+                end
+
+                if (label_name:includes("%.")) then
+                    self:assembleMsg("Error [line " .. line .. "]: Label cannot contain '.' character")
+                else
+                    self.labels[label_name] = self.program_index
+                end
+
+                -- remove label from the table
+                table.remove(inputs, 1)
+                if table.getLength(inputs) == 0 then
+                    print("line only contained a label, jumping to end of loop")
+                    goto next_line
+                end
+
+            end
+        end
+
+        for k,v in pairs(inputs) do
+            print(k, v)
+        end
+
+        -- check if the line is a comment
+        if inputs[1]:sub(1,1) == ";" then
+            print("this line is a comment: skipping")
+            goto next_line 
+        end
+
+        -- if the first argument is a mnemonic
+        if (opcodes.opcode_table[inputs[1]] ~= nil or self.short_mnemonic_table[inputs[1]] ~= nil) then
+            -- clean up the arguments to be passed
+            local mnemonic = table.remove(inputs, 1)
+            if (self.short_mnemonic_table[mnemonic] ~= -1 and self.short_mnemonic_table[mnemonic] ~= nil) then
+                mnemonic = self.short_mnemonic_table[mnemonic]
+            end
+
+            for i,v in pairs(inputs) do
+                print(i,v)
+            end
+
+            inputs = self:trimArguments(inputs)
+
+            -- call the funciton named by the mnemonic
+            if string.len(mnemonic) == 3 then
+                self[mnemonic:lower()](self, line, inputs)
+            else
+                self:assembleOperation(mnemonic, line, inputs)
+            end
+        else
+            -- if the first argmuent is not a mnemonic, check if it is an immediate
+            -- if it is, write the value directly to the output
+            for i = 1,table.getLength(inputs) do
+                local arg_vals, arg_types = self:handleArguments(line, {inputs[i]}, {immediate = -1}, {})
+
+                if (arg_types[1] == "immediate") then
+                    local arg_bytes = math.ceil(string.len(arg_vals[1])/8)
+                    self:append(arg_vals[i])
+                    self.program_index = self.program_index + arg_bytes;
+                else
+                    self:assembleMsg("Error [line " .. line .. "]: Unidentified value")
+                end
+            end
+        end
 
         ::next_line::
+        print("done line")
     end
 
+    self:addProgramIndex(-1)
+
+    self.start_index = self.start_index - self.program_index
+    self:resolveLabels()
+
+    self.machine_code = numbers.toBin(self.program_index, 16) .. numbers.toBin(self.start_index, 16) .. self.machine_code
+
+    print("start index: " .. tostring(self.start_index))
+    print("program index: " .. tostring(self.program_index))
+
     table.text_save({n = 1, self.machine_code}, filename)
-    self:assembleMsg("Build completed without critical failure")
     return self.assembler_report
 end
 
--- for the four character functions, we are sure that the expected input is given, to some degree
--- Immediate values are denoted by #, labels are denoted by $, otherwise if A, B, C, D, H, L, X, Y are given they are assumed to be registers
--- @ denotes a memory address e.g. @#100110b
--- arguments are seperated by a space
--- ; denotes a comment
--- :label: assigns a label
--- .option defines an assembler option
--- number formats binary (b), octal (c), decimal (d) and hexadecimal (h) are supported, written in the format e.g. #1fh (immediate hexadecimal value 1f)
-
--- some examples
--- :var: #10d ; this essentially is a variable named "var" with the value 10
-
 do -- Arithmetic Functions
-
     -- adds two numbers together with a carry
     function Assembler:adc(line, args)
+
         -- check the arguments
-        local arg_vals, arg_types = self:checkArguments(line, args, {immediate = 8, register = 4}, {})
+        local _, arg_types = self:handleArguments(line, args, {immediate = 8, register = 4}, {none = 0})
 
         -- call the appropriate function
-        if arg_types[1] == "register" then
-            self:acra(line, arg_vals)
-        elseif arg_types[1] == "immediate" then
-            self:acia(line, arg_vals)
+        if (arg_types[1] == "register" and arg_types[2] == "none") then
+            self:assembleOperation("acra", line, args)
+        elseif (arg_types[1] == "immediate" and arg_types[2] == "none") then
+            self:assembleOperation("acia", line, args)
         end
-
     end
 
-    -- adds the value stored in a register to the value stored in the accumulator,
-    -- storing the result in the accumulator
-    function Assembler:acra(line, args)
-        local opcode = numbers.toBin()
-    end
+    -- subtracts two numbers together with a carry
+    function Assembler:sbc(line, args)
+        -- check the arguments
+        local _, arg_types = self:handleArguments(line, args, {immediate = 8, register = 4}, {none = 0})
 
-    -- adds an immediate value to the value stored in the accumulator,
-    -- storing the result in the accumulator
-    function Assembler:acia(line, args)
-        
+        -- call the appropriate function
+        if (arg_types[1] == "register" and arg_types[2] == "none") then
+            self:assembleOperation("scra", line, args)
+        elseif (arg_types[1] == "immediate" and arg_types[1] == "none") then
+            self:assembleOperation("scia", line, args)
+        end
     end
-
 end -- Arithmetic Functions
 
+do -- Incrementing and Decrementing
+end -- Incrementing and Decrementing
 
-function Assembler:mov(line, args)
-    -- check the number of arguments provided
-    if not self:checkNumArgs(line, args, 3) then return self.assembler_report end
+do -- Setting and Clearing Flags
+end -- Setting and Clearing Flags
 
-    -- try to perform operations using those 
-    local opcode =  numbers.toBin(self.op.mov, 8);
+do -- Logic
+    function Assembler:ana(line, args)
+        -- check the arguments
+        local _, arg_types = self:handleArguments(line, args, {immediate = 8, register = 4}, {none = 0})
 
-    -- Read register inputs as A, B, C, etc
-    local arg1 = numbers.toBin(self.reg_alpha[args[2]:upper()], 8);
-    local arg2 = numbers.toBin(self.reg_alpha[args[3]:upper()], 8);
-    
-    if self:checkRegister(line, arg1) and self:checkRegister(line, arg2) then
-        self:append(opcode .. arg1 .. arg2)
-    end
-end
-
-function Assembler:add(line, args)
-    if not self:checkNumArgs(line, args, 2) then return self.assembler_report end
-
-    local arg1 = self.reg_alpha[args[2]:upper()];
-
-    print(self:checkRegister(line, arg1))
-
-    if self:checkRegister(line, arg1) then
-        self:append(self.op.add .. arg1 .. "0000")
-    end
-end
-
-function Assembler:adi(line, args)
-end
-
-function Assembler:jmp(line, args)
-    if not self:checkNumArgs(line, args, 2) then return self.assembler_report end
-    
-    local arg1 = self.labels[args[2]:upper()] -- argument given as a label
-    if arg1 == nil then -- argument not given as a label
-        local overflow;
-        arg1, overflow = numbers.setBits(numbers.toBin(arg[1]), 16)
-        if self:checkForceBits(arg1, overflow) then
-            self:append(self.op.jmp .. arg1)
-        end
-    else
-        self:append(self.op.jmp .. arg1)
-    end
-end
-
-function Assembler:checkNumArgs(line, args, n)
-    for i = 2,n do
-        if args[i] == nil then
-            local err_msg = "Fatal [line " .. line .. "]: Not enough arguments provided"
-            self:assembleMsg(err_msg);
-            return false
+        -- call the appropriate function
+        if (arg_types[1] == "register" and arg_types[2] == "none") then
+            self:assembleOperation("anra", line, args)
+        elseif (arg_types[1] == "immediate" and arg_types[2] == "none") then
+            self:assembleOperation("ania", line, args)
         end
     end
-    if args[n + 1] ~= nil and args[n + 1]:sub(1,1) ~= ";" then
-        local err_msg = "Error [line " .. line .. "]: Too many arguments provided"
-        self:assembleMsg(err_msg);
-        return false;
-    end
-    return true;
-end
 
-function Assembler:checkForceBits(line, num, err)
-    if tonumber(num) == nil then
-        local err_msg = "Error [line " .. line .. "]: non numeric value(s) provided"
-        self:assembleMsg(err_msg);
-        return false;
+    function Assembler:ora(line, args)
+        -- check the arguments
+        local _, arg_types = self:handleArguments(line, args, {immediate = 8, register = 4}, {none = 0})
+
+        -- call the appropriate function
+        if (arg_types[1] == "register" and arg_types[2] == "none") then
+            self:assembleOperation("orra", line, args)
+        elseif (arg_types[1] == "immediate" and arg_types[2] == "none") then
+            self:assembleOperation("oria", line, args)
+        end
     end
 
-    -- check if the numbers provided were oversized
-    if err then
-        local err_msg = "Error [line " .. line .. "]: argmument exceed maximum value"
-        self:assembleMsg(err_msg);
-        return false
+    function Assembler:xor(line, args)
+        -- check the arguments
+        local _, arg_types = self:handleArguments(line, args, {immediate = 8, register = 4}, {none = 0})
+
+        -- call the appropriate function
+        if (arg_types[1] == "register" and arg_types[2] == "none") then
+            self:assembleOperation("xora", line, args)
+        elseif (arg_types[1] == "immediate" and arg_types[2] == "none") then
+            self:assembleOperation("xoia", line, args)
+        end
     end
 
-    return true
-end
+    function Assembler:cmp(line, args)
+        -- check the arguments
+        local _, arg_types = self:handleArguments(line, args, {immediate = 8, register = 4}, {none = 0})
 
-function Assembler:checkRegister(line, reg)
-    if reg == nil then
-        local err_msg = "Fatal [line " .. line .. "]: Invalid definition of registers"
-        self:assembleMsg(err_msg);
-        return false;
-    else
-        return true
+        -- call the appropriate function
+        if (arg_types[1] == "register" and arg_types[2] == "none") then
+            self:assembleOperation("cpra", line, args)
+        elseif (arg_types[1] == "immediate" and arg_types[2] == "none") then
+            self:assembleOperation("cpia", line, args)
+        end
     end
-end
+end -- Logic
 
-function Assembler:append(str)
-    self.machine_code = self.machine_code .. str
+do -- Data Manipulation
+end -- Data Manipulation
+
+do -- Moving Data
+
+    function Assembler:mov(line, args)
+        -- check the arguments
+        local _, arg_types = self:handleArguments(line, args, {register = 4}, {register = 4})
+
+        -- call the appropriate function
+        if (arg_types[1] == "register" and arg_types[1] == "register") then
+            self:assembleOperation("mvrr", line, args)
+        end
+    end
+
+    function Assembler:str(line, args)
+        -- check the arguments
+        local _, arg_types = self:handleArguments(line, args, {address = 16, none = 0}, {})
+
+        -- call the appropriate function
+        if (arg_types[1] == "address" and arg_types[2] == "none") then
+            self:assembleOperation("stma", line, args)
+        elseif (arg_types[1] == "none" and arg_types[2] == "none") then
+            self:assembleOperation("staz", line, args)
+        end
+    end
+
+    function Assembler:lod(line, args)
+        -- check the arguments
+        local _, arg_types = self:handleArguments(line, args, {address = 16, none = 0}, {})
+
+        -- call the appropriate function
+        if (arg_types[1] == "address" and arg_types[2] == "none") then
+            self:assembleOperation("ldma", line, args)
+        elseif (arg_types[1] == "none" and arg_types[2] == "none") then
+            self:assembleOperation("ldaz", line, args)
+        end
+    end
+
+    function Assembler:psh(line, args)
+        self:assembleOperation("psha", line, args)
+    end
+
+    function Assembler:pll(line, args)
+        self:assembleOperation("plla", line, args)
+    end
+
+end -- Moving Data
+
+-- adds a value to the program index, this should be a number of bytes
+function Assembler:addProgramIndex(num)
+    self.program_index = self.program_index + num
 end
 
 -- append a compile message to be returned once compilation is complete
@@ -262,97 +281,294 @@ function Assembler:assembleMsg(str)
     self.assembler_report.n = self.assembler_report.n + 1;
 end
 
+function Assembler:append(str)
+    self.machine_code = self.machine_code .. str
+end
 
-function Assembler:checkArguments(line, args, allowed_arg_1, allowed_arg_2)
-    -- argument types: "register", "immediate", "address"
-    -- allowed_arg = {"immediate" = 8} (allowed an 8 bit immediate value)
-    -- return the types and sizes of the two arguments
-    -- {arg1 = 8, arg2 = 4} or something like that
-    -- # denotes immediate
-    -- @ denotes address
-    -- A, B, C etc denote registers
-    -- args is just the table of arguments not the opcode
-    -- label, if defined, should always be safe to use
-    -- if not typed, the value is assumed to be a label, this is equivelant to an address
+-- 
+function Assembler:trimArguments(args)
+    local args_end = table.getLength(args)
 
+    for i = args_end,1,-1 do
+        if (string.sub(args[i], 1, 1) == ";") then
+            args_end = i - 1
+        end
+    end
+
+    return table.subtable(args, 1, args_end)
+end
+
+-- return the correct form from the arg handler
+function Assembler:assembleOperation(mnemonic, line, args)
+    if self[self.limitation][mnemonic] == nil then
+        self:assembleMsg("Error [line " .. line .. "]: This mnemonic is not supported by this processor")
+    else
+        local args_lookup_table = {n = "none", r = "register", i = "immediate", z = "zero", a = "address"}
+
+        local arg_indices = {string.sub(opcodes.opcode_table[mnemonic].args, 1,1), string.sub(opcodes.opcode_table[mnemonic].args, 4,4)}
+        local req_arg_sizes = {tonumber(string.sub(opcodes.opcode_table[mnemonic].args, 2,3)), tonumber(string.sub(opcodes.opcode_table[mnemonic].args, 5,6))}
+
+        local req_arg_types = {args_lookup_table[arg_indices[1]], args_lookup_table[arg_indices[2]]}
+
+        local arg_vals, arg_types = self:handleArguments(line, args, {[req_arg_types[1]] = req_arg_sizes[1]}, {[req_arg_types[2]] = req_arg_sizes[2]})
+        
+        if (arg_types[1] == req_arg_types[1] and arg_types[2] == req_arg_types[2]) then
+            print("\narg types entered")
+            for k,v in pairs(arg_types) do
+                print(k, v)
+            end
+
+            print("\narg vals entered")
+            for k,v in pairs(arg_vals) do
+                print(k, v)
+            end
+
+            local opcode = numbers.toBin(opcodes.opcode_table[mnemonic].opcode, 8)
+            local command_size = 8 + req_arg_sizes[1] + req_arg_sizes[2]
+            self:append(opcode .. arg_vals[1] .. arg_vals[2])
+            self:addProgramIndex(math.ceil(command_size/8))
+        end
+    end
+end
+
+function Assembler:handleAssemblerParams(line, inputs)
+    local arg = string.lower(string.sub(table.remove(inputs, 1), 2, -1))
+    inputs = self:trimArguments(inputs)
+    
+    if arg == "start" then
+    else
+        self:assembleMsg("Error [line " .. line .. "]: Assembler command `" .. arg .. "' not recognised")
+    end
+end
+
+function Assembler:handleArguments(line, args, allowed_arg_1, allowed_arg_2)
     local arg_place = {"first", "second"}
-    local allowed_arg = {allowed_arg_1, allowed_arg_2}
+    local allowed_args = {allowed_arg_1, allowed_arg_2}
+
+    print("Allowed arguments in the first place")
+    for k,v in pairs(allowed_args[1]) do
+        print(k,v)
+    end
+
+    print("Allowed arguments in the second place")
+    for k,v in pairs(allowed_args[2]) do
+        print(k,v)
+    end
 
     local arg_vals = {}
     local arg_types = {}
 
     for i = 1,2 do
-        if (#allowed_arg[i] > 0 and args[i] == nil) then -- no argument provided, one desired
+        if (args[i] == nil and (allowed_args[i].none ~= nil or table.getLength(allowed_args[i]) == 0)) then -- no argument and none desired
+            print("No argument provided, and none was desired")
+            arg_vals[i] = ""
+            arg_types[i] = "none"
+
+        elseif (args[i] == nil and table.getLength(allowed_args[i]) > 0) then -- no argument provided, one desired
+            print("no argument was proveded, but one was expected")
             self:assembleMsg("Error [line " .. line .. "]: Expected " .. arg_place[i] .. " argument, none provided")
 
-        elseif (#allowed_arg[i] == 0) then -- argument provided, none desired
-            self:assembleMsg("Warning [line " .. line .. "]: No " .. arg_place[i] .. " argument expected, it will be ignored")
+        elseif (string.sub(args[i], 1, 1) == "#") then -- immediate value
+            arg_vals[i], arg_types[i] = self:handleImmediateArgs(line, i, args, allowed_args)
 
-        elseif (string.sub(arg[i], 1, 1) == "#") then -- immediate value
-            local bit_count = allowed_arg[i].immediate
-            if bit_count ~= nil then
-                local val = numbers.tonumber()
-                if (val ~= nil) then
-                    if (val < math.pow(2,bit_count)) then
-                        arg_vals[i] = val
-                        arg_types[i] = "immediate"
-                    else
-                        self:assembleMsg("Warning [line " .. line .. "]: Value in the " .. arg_place[i] .. 
-                                         " argument exceeds the maximum number of bytes, it will be truncated")
-                        arg_vals[i] = val
-                        arg_types[i] = "immediate"
-                    end
-                else
-                    self:assembleMsg("Error [line " .. line .. "]: The numeric expression in the " .. arg_place[i] .. " argument is malformed")
+        elseif (string.sub(args[i], 1, 1) == "@") then -- address value
+            arg_vals[i], arg_types[i] = self:handleAddressArgs(line, i, args, allowed_args)
 
-                end
-            else
-                self:assembleMsg("Error [line " .. line .. "]: Operator does not support an immediate value for the " .. arg_place[i] .. " argument")
-            end
+        elseif (self.reg_alpha[args[i]] ~= nil) then -- register
+            arg_vals[i], arg_types[i] = self:handleRegisterArgs(line, i, args, allowed_args)
 
-        elseif (string.sub(arg[i], 1, 1) == "@") then -- address value
-            local bit_count = allowed_arg[i].address
-            if bit_count ~= nil then
-                local val = numbers.tonumber()
-                if (val ~= nil) then
-                    if (val < math.pow(2,bit_count)) then
-                        arg_vals[i] = val
-                        arg_types[i] = "address"
-                    else
-                        self:assembleMsg("Warning [line " .. line .. "]: Value in the " .. arg_place[i] .. 
-                                         " argument exceeds the maximum number of bytes, it will be truncated")
-                        arg_vals[i] = val
-                        arg_types[i] = "address"
-                    end
-                else
-                    self:assembleMsg("Error [line " .. line .. "]: The numeric expression in the " .. arg_place[i] .. " argument is malformed")
-                end
-            else
-                self:assembleMsg("Error [line " .. line .. "]: Operator does not support an address value for the " .. arg_place[i] .. " argument")
-            end
-
-        elseif (self.reg_alpha[arg[i]] ~= nil) then -- register
-            if allowed_arg[i].register ~= nil then
-                arg_vals[i] = self.reg_alpha[arg[i]]
-                arg_types[i] = "register"
-            else
-                self:assembleMsg("Error [line " .. line .. "]: Operator does not support a register value for the " .. arg_place[i] .. " argument")
-            end
-
-        else -- label
-            if allowed_arg[i].address ~= nil then
-                local label_val = self.labels[arg[i]]
-                if label_val ~= nil then
-                    arg_vals[i] = label_val
-                    arg_types[i] = "address"
-                else
-                    self:assembleMsg("Error [line " .. line .. "]: Label " .. arg[i] .. " is not defined anywhere in the program")
-                end
-            end
+        elseif (args[i] ~= nil) then -- label
+            arg_vals[i], arg_types[i] = self:handleLabelArgs(line, i, args, allowed_args)
         end
     end
 
     return arg_vals, arg_types
+end
 
+function Assembler:handleImmediateArgs(line, i, args, allowed_args)
+    local arg_val, arg_type
+    local places = {"first", "second"}
 
+    print("recieved an immediate value")
+    local bit_count = allowed_args[i].immediate
+
+    if bit_count ~= nil then
+        print("value given was an immediate that can have " .. tostring(bit_count) .. " bits")
+
+        -- check if the provided argument is in the form of a string
+        local is_string = false
+        if (string.sub(args[i], 1, 1) == '"' and string.sub(args[i], -1, -1) == '"') then
+            is_string = true
+        elseif (string.sub(args[i], 1, 1) == "'" and string.sub(args[i], -1, -1) == "'") then
+            is_string = true
+        end
+
+        local val = nil
+
+        -- if the argument is a string, then we handle it a little differently than a number
+        if (is_string) then
+            print("value given was a string")
+            local str = string.sub(args[i], 2, -2)      -- extract the string
+            local str_len = string.len(str)             -- get the length of the string
+            local str_bits = str_len*8                  -- get the number of bits occupied by the string (each character takes 1 byte)
+
+            -- check if the number of bits is within the allowed amount
+            if (str_bits > bit_count) then
+                self:assembleMsg("Warning [line " .. line .. "]: Value in the " .. places[i] .. 
+                                    " argument exceeds the maximum number of bytes, it will be truncated")
+            end
+
+            local bin_val = ""                          -- initialise the string to store the binary representation of the string
+
+            -- loop through each character, check that it is valid and append the binary representation to bin_val
+            for i = str_len,1,-1 do
+                local char = string.sub(str, i, i)
+                local byte = utf8.to_byte(char)
+                if byte ~= nil then
+                    bin_val = bin_val .. numbers.toBin(byte, 8)
+                else
+                    self:assembleMsg("Error [line " .. line .. "]: Undefined unicode character used")
+                end
+
+                -- if there was something in the string, then we set arg_vals equal to said value
+                if string.len(bin_val) > 0 then
+                    if (bit_count ~= -1) then
+                        local str_end_index = math.floor(bit_count/8)
+                        bin_val = string.sub(bin_val, 1, str_end_index)
+                    end
+                    arg_val = bin_val
+                    arg_type = "immediate"
+                end
+            end
+
+        else -- if the value is not a string, then we assume it to be a number
+            val = numbers.tonumber(string.sub(args[i], 2, -1))
+            print("value given was an immediate number: " .. tostring(val))
+        
+            if (val ~= nil) then
+                if (bit_count == -1) then
+                    -- needs to be in little endian
+                    local num_bits = math.floor(math.log(val, 2)) + 1
+                    num_bits = num_bits + math.fmod(8 - math.fmod(num_bits, 8), 8)
+                    arg_val = numbers.toBin(val, num_bits)
+                    arg_type = "immediate"
+                elseif (val < math.pow(2,bit_count)) then
+                    arg_val = numbers.toBin(val, bit_count)
+                    arg_type = "immediate"
+                else
+                    self:assembleMsg("Warning [line " .. line .. "]: Value in the " .. places[i] .. 
+                                    " argument exceeds the maximum number of bytes, it will be truncated")
+                    arg_val = numbers.toBin(val, bit_count)
+                    arg_type = "immediate"
+                end
+            else
+                self:assembleMsg("Error [line " .. line .. "]: The numeric expression in the " .. places[i] .. " argument is malformed")
+            end
+        end
+    else
+        self:assembleMsg("Error [line " .. line .. "]: Operator does not support an immediate value for the " .. places[i] .. " argument")
+    end
+
+    return arg_val, arg_type
+end
+
+function Assembler:handleAddressArgs(line, i, args, allowed_args)
+    local arg_val, arg_type
+    local places = {"first", "second"}
+
+    print("provided an address value")
+    local bit_count = allowed_args[i].address
+
+    if bit_count ~= nil then
+        local val = numbers.tonumber(string.sub(args[i], 2, -1))
+
+        if (val ~= nil) then
+            if (val >= math.pow(2,bit_count)) then
+                self:assembleMsg("Warning [line " .. line .. "]: Value in the " .. places[i] .. 
+                                    " argument exceeds the maximum number of bytes, it will be truncated")
+            end
+            
+            local bin = numbers.toBin(val, 16)
+            local address_bin = string.sub(bin, -8, -1) .. string.sub(bin, 1, 8)
+            arg_val = address_bin
+            arg_type = "address"
+
+        else
+            self:assembleMsg("Error [line " .. line .. "]: The numeric expression in the " .. places[i] .. " argument is malformed")
+        end
+    else
+        self:assembleMsg("Error [line " .. line .. "]: Operator does not support an address value for the " .. places[i] .. " argument")
+    end
+
+    return arg_val, arg_type
+end
+
+function Assembler:handleRegisterArgs(line, i, args, allowed_args)
+    local arg_val, arg_type
+    local places = {"first", "second"}
+
+    print("provided a register value")
+    if allowed_args[i].register ~= nil then
+        arg_val = numbers.toBin(self.reg_alpha[args[i]], 4)
+
+        -- buffer to make the register take up 8 bytes
+        if allowed_args[i].register == 8 then
+            arg_val = arg_val .. "0000"
+        end
+        arg_type = "register"
+    else
+        self:assembleMsg("Error [line " .. line .. "]: Operator does not support a register value for the " .. places[i] .. " argument")
+    end
+
+    return arg_val, arg_type
+end
+
+function Assembler:handleLabelArgs(line, i, args, allowed_args)
+    local arg_val, arg_type
+    local places = {"first", "second"}
+
+    print("provided a label")
+
+    if (allowed_args[i].address == 16) then
+        arg_val = "[" .. tostring(line) .. "." .. args[i] .. "]"
+        arg_type = "address"
+    else
+        self:assembleMsg("Error [line " .. line .. "]: The " .. places[i] .. " argument cannot be a label (16-bit address)")
+    end
+
+    return arg_val, arg_type
+end
+
+function Assembler:resolveLabels()
+    local i, label_data, line, label_name, label_val, address, address_bin
+    local j = 1
+
+    print("\nResolving Labels")
+    for k,v in pairs(self.labels) do
+        print(k, v)
+    end
+
+    while (string.find(self.machine_code, "%[", j) ~= nil) do
+        i = string.find(self.machine_code, "%[", j)
+        j = string.find(self.machine_code, "%]", i)
+        label_data = string.sub(self.machine_code, i + 1, j - 1):split(".")
+        line = label_data[1]
+        label_name = label_data[2]
+
+        print("line: " .. line)
+        print("label name: " .. label_name)
+
+        label_val = self.labels[label_name]
+        if (label_val == nil) then
+            self:assembleMsg("Error [line " .. line .. "]: Label not defined")
+            return nil, nil
+        else
+            address = self.start_index + label_val - 1
+            address_bin = numbers.toBin(address, 16)
+            if address_bin ~= nil then
+                self.machine_code = string.sub(self.machine_code, 1, i-1) .. string.sub(address_bin, -8, -1) .. string.sub(address_bin, 1, 8) .. string.sub(self.machine_code, j + 1, -1)
+                j = i + 16
+            end
+        end
+    end
 end
