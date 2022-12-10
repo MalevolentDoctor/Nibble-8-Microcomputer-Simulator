@@ -34,7 +34,7 @@ function Editor.new(console, x, y, w, h, shader_adjust)
     self.horz_cursor = 1;           -- horizontal position of the cursor
 
 	-- window parameters
-	self.win = Window.new(self, self.x, self.y, self.w, self.h, 0, 20, 5, 0,
+	self.win = Window.new(self, self.x, self.y, self.w, self.h, 0, 40, 10, 0,
 	{"dos16", "pxl_5x7_bold", "pxl_5x7_bold"}, -- fonts
 	{{"202020", "101010"}, {"000"}, {"ccc", "ddd"}} -- colours
 	)
