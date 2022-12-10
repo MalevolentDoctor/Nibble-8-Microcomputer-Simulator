@@ -7,6 +7,7 @@ function Rom.new(microcomputer, start, size)
 
 	self.thisMicrocomputer = microcomputer
 	self.size = size
+	self.start = start
 
 	-- create and initialise rom table
 	self.rom = {}
