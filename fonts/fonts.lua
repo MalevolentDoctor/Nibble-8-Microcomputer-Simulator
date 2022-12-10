@@ -7,9 +7,9 @@ Font = {
 		["nokia_mod"] = love.graphics.newFont("fonts/8x8pixelFont.ttf", 8, "mono"),
 		["start"] = love.graphics.newFont("fonts/fnt_pressStart.ttf", 8, "mono"),
 		["retro"] = love.graphics.newFont("fonts/fnt_retroGaming.ttf", 11, "mono"),
-		["pxl_5x7_thin"] = love.graphics.newFont("fonts/fnt_pixel_5x7_thin.ttf", 7, "mono"),
-		["pxl_5x7_bold"] = love.graphics.newFont("fonts/fnt_pixel_5x7_bold.ttf", 7, "mono"),
-		["pxl_3x5_thin"] = love.graphics.newFont("fonts/fnt_pixel_3x5_thin_allcaps.ttf", 7, "mono"),
+		["pxl_5x7_thin"] = love.graphics.newFont("fonts/fnt_pixel_5x7_thin.ttf", 14, "mono"),
+		["pxl_5x7_bold"] = love.graphics.newFont("fonts/fnt_pixel_5x7_bold.ttf", 14, "mono"),
+		["pxl_3x5_thin"] = love.graphics.newFont("fonts/fnt_pixel_3x5_thin_allcaps.ttf", 14, "mono"),
 	}
 }
 
