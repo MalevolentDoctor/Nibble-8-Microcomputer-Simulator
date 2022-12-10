@@ -56,7 +56,6 @@ end
 -- Load standard text format
 function table.textLoad(fname)
     local f_info = {};
-    print(fname)
     f_info = love.filesystem.getInfo(fname, f_info)
     if f_info ~= nil then
         if f_info.type == "file" then -- file exists, so we can try to read from it
@@ -84,7 +83,6 @@ end
 -- Load standard text format
 function table.textLoadBinary(fname)
     local f_info = {};
-    print(fname)
     f_info = love.filesystem.getInfo(fname, f_info)
     if f_info ~= nil then
         if f_info.type == "file" then -- file exists, so we can try to read from it
@@ -136,8 +134,10 @@ end
 
 function table.getLength(tbl)
     local len = 0
-    for _ in pairs(tbl) do
-        len = len + 1
+    for k,_ in pairs(tbl) do
+        if (k ~= "n") then
+            len = len + 1
+        end
     end
 
     return len
