@@ -79,7 +79,7 @@ end
 -- cannot differentiate between RAM and ROM
 
 -- 0x0000 - 0x00ff: zero page
--- 0x0100 - 0x00ff: stack
+-- 0x0100 - 0x01ff: stack
 -- 0x0200 - 0x0?ff: program
 -- 0x0(?+1)00 - 0xefff: general purpose memory
 -- 0xff00 - 0xffff: system params, dedication io stuff etc
@@ -95,7 +95,7 @@ function Microprocessor:update(dt)
     if self.active then
         self:fetch()
         self:decodeOpcode()
-        love.timer.sleep(0.2)
+        -- love.timer.sleep(0.2)
     end
 end
 
@@ -103,13 +103,13 @@ do -- ## Operations ## --
 
 do -- Arithmetic
 
-    -- adds the value stored in a register to the value stored in the accumulator
-    -- storing the result in the accumulator
+    -- adds the value stored in a register to the value stored in the accumulator, storing the result in the accumulator
     function Microprocessor:acra()
         self:meta_writeRegisterToTemp()
         self:aluAdd()
     end
 
+    -- adds an immediate value to the value stored in the accumulator, storing the result in the accumulator
     function Microprocessor:acia()
         self:meta_writeImmediateToTemp()
         self:aluAdd()
@@ -222,9 +222,10 @@ do -- Logic
     function Microprocessor:ania()
         self:meta_writeImmediateToTemp()
         self:aluAnd()
+        print("accumualator after ania: 0x" .. bit.tohex(self.accumulator, 2) .. "\n")
     end
 
-    function Microprocessor:orrr()
+    function Microprocessor:orra()
         self:meta_writeRegisterToTemp()
         self:aluOr()
     end
@@ -234,7 +235,7 @@ do -- Logic
         self:aluOr()
     end
 
-    function Microprocessor:xorr()
+    function Microprocessor:xora()
         self:meta_writeRegisterToTemp()
         self:aluXor()
     end
@@ -281,6 +282,14 @@ do -- Moving Data
         local lo_reg, hi_reg = self:decodeRegister()
         self:readRegister(lo_reg)
         self:writeRegister(hi_reg)
+
+        print("accumualator after mvrr: 0x" .. bit.tohex(self.accumulator, 2))
+        print("gp_registers after mvrr:")
+        for k,v in pairs(self.gp_registers) do
+            print(k,v)
+        end
+        print("")
+
     end
 
     -- stores the accumulator at the specified address in memory
@@ -337,7 +346,7 @@ do -- Moving Data
     function Microprocessor:tfzi()
         self:readRegister(0x7)
         self:writeInstructionPointerLowByte()
-        self:readRegister(0x7)
+        self:readRegister(0x8)
         self:writeInstructionPointerHighByte()
     end
 
@@ -375,6 +384,8 @@ do -- Branching
     -- unconditional jump
     function Microprocessor:jump()
         self:meta_writeMemBytePairToXY()
+        print("X register: 0x" .. bit.tohex(self.gp_registers[7], 2))
+        print("Y register: 0x" .. bit.tohex(self.gp_registers[8], 2))
         self:tfzi()
     end
 
@@ -383,6 +394,9 @@ do -- Branching
         if (self:getSign() == 1) then
             self:meta_writeMemBytePairToXY()
             self:tfzi()
+        else
+            self:incInstructionPointer()
+            self:incInstructionPointer()
         end
     end
 
@@ -391,6 +405,9 @@ do -- Branching
         if (self:getSign() == 0) then
             self:meta_writeMemBytePairToXY()
             self:tfzi()
+        else
+            self:incInstructionPointer()
+            self:incInstructionPointer()
         end
     end
 
@@ -398,7 +415,12 @@ do -- Branching
     function Microprocessor:jpez()
         if (self:getZero() == 1) then
             self:meta_writeMemBytePairToXY()
+            print("X register: 0x" .. bit.tohex(self.gp_registers[7]))
+            print("Y register: 0x" .. bit.tohex(self.gp_registers[8]))
             self:tfzi()
+        else
+            self:incInstructionPointer()
+            self:incInstructionPointer()
         end
     end
 
@@ -407,6 +429,9 @@ do -- Branching
         if (self:getZero() == 0) then
             self:meta_writeMemBytePairToXY()
             self:tfzi()
+        else
+            self:incInstructionPointer()
+            self:incInstructionPointer()
         end
     end
 
@@ -415,6 +440,9 @@ do -- Branching
         if (self:getCarry() == 1) then
             self:meta_writeMemBytePairToXY()
             self:tfzi()
+        else
+            self:incInstructionPointer()
+            self:incInstructionPointer()
         end
     end
 
@@ -423,6 +451,9 @@ do -- Branching
         if (self:getCarry() == 0) then
             self:meta_writeMemBytePairToXY()
             self:tfzi()
+        else
+            self:incInstructionPointer()
+            self:incInstructionPointer()
         end
     end
 
@@ -431,6 +462,9 @@ do -- Branching
         if (self:getOverflow() == 1) then
             self:meta_writeMemBytePairToXY()
             self:tfzi()
+        else
+            self:incInstructionPointer()
+            self:incInstructionPointer()
         end
     end
 
@@ -439,6 +473,9 @@ do -- Branching
         if (self:getOverflow() == 0) then
             self:meta_writeMemBytePairToXY()
             self:tfzi()
+        else
+            self:incInstructionPointer()
+            self:incInstructionPointer()
         end
     end
 
@@ -475,7 +512,7 @@ do -- Branching
         self:writeInstructionPointerHighByte()
         self:decStackPointer()
     end
-    
+
 end -- Branching
 
 do -- Microprocessor Stuff
@@ -515,9 +552,9 @@ do -- ## ALU Operations ## --
         -- set the carry flag
         if (bit.band(result, 0x100) == 1) then self:setCarry() else self:clearCarry() end
 
-        self:setSFlagFor(result)
-        self:setVFlagFor(result)
-        self:setZFlagFor(result)
+        self:setSFlagFor(self.accumulator)
+        self:setVFlagFor(self.accumulator)
+        self:setZFlagFor(self.accumulator)
     end
 
     function Microprocessor:aluSub()
@@ -528,9 +565,10 @@ do -- ## ALU Operations ## --
         -- set the carry flag
         if (bit.band(result, 0x100) == 0) then self:setCarry() else self:clearCarry() end
 
-        self:setSFlagFor(result)
-        self:setVFlagFor(result)
-        self:setZFlagFor(result)
+        self:setSFlagFor(self.accumulator)
+        self:setVFlagFor(self.accumulator)
+        self:setZFlagFor(self.accumulator)
+        print("Z flag after subtraction: " .. self:getZero())
     end
 
     function Microprocessor:aluAnd()
@@ -587,25 +625,28 @@ do -- ## Micro Instructions ## -- Manipulating data_bus, flags, fetching data, e
     function Microprocessor:start()
         --## Reads the initial instruction pointer from memory
         -- read least significant byte from memory 0xfffc
-        self.thisMicrocomputer.address_bus = 0xfffc
-        self.thisMicrocomputer:pull_memory()
+        self.address_bus = 0xfffc
+        self.thisMicrocomputer:readMemory()
+        self:readDataPins()
         -- set least significant byte without altering most significant byte
-        self.instruction_pointer = bit.lshift(bit.rshift(self.instruction_pointer, 8), 8) + self.thisMicrocomputer.data_bus
+        self.instruction_pointer = bit.band(self.instruction_pointer, 0xff00) + self:getDataBus()
 
         -- push 0xfffc to the address bus
-        self.thisMicrocomputer.address_bus = 0xfffd
-        self.thisMicrocomputer:pull_memory()
+        self.address_bus = 0xfffd
+        self.thisMicrocomputer:readMemory()
+        self:readDataPins()
         -- set most significant byte without altering least significant byte
-        self.instruction_pointer = bit.lshift(self.thisMicrocomputer.data_bus, 8) + bit.rshift(bit.bswap(self.instruction_pointer), 24)
-
+        self.instruction_pointer = bit.lshift(self:getDataBus(), 8) + bit.band(self.instruction_pointer, 0x00ff)
+        print("initial instruction pointer: 0x" .. bit.tohex(self.instruction_pointer, 4):upper())
     end
 
     -- fecthes the instruction from memory
     function Microprocessor:fetch()
         --## fetches the instruction from the location specified by the instruction pointer and saves it to the instruction register
-        self.thisMicrocomputer.address_bus = self.instruction_pointer
-        self.thisMicrocomputer:pull_memory()
-        self.instruction_register = self.thisMicrocomputer.data_bus
+        self.address_bus = self.instruction_pointer
+        self.thisMicrocomputer:readMemory()
+        self:readDataPins()
+        self.instruction_register = self:getDataBus()
 
         -- increment the instruction pointer after it has finished fetching
         self:incInstructionPointer()
@@ -614,7 +655,7 @@ do -- ## Micro Instructions ## -- Manipulating data_bus, flags, fetching data, e
     -- decodes the instruction stored in the instruction register
     function Microprocessor:decodeOpcode()
         -- determine the opcode 
-        print("instruction: " .. tostring(self.instruction_register) .. " = " .. self.opcode_table[self.instruction_register])
+        print("instruction: 0x" .. bit.tohex(self.instruction_register, 2):upper() .. " = " .. self.opcode_table[self.instruction_register])
         self[self.opcode_table[self.instruction_register]](self)
     end
 
@@ -650,7 +691,7 @@ do -- ## Micro Instructions ## -- Manipulating data_bus, flags, fetching data, e
     -- returns the data stored in the specified register5q
     function Microprocessor:readRegister(index)
         if index == 0 then
-            self.data_dus = self.accumulator
+            self.data_bus = self.accumulator
         else
             self.data_bus = self.gp_registers[index]
         end
@@ -659,10 +700,14 @@ do -- ## Micro Instructions ## -- Manipulating data_bus, flags, fetching data, e
     -- sets the data in the specified register
     function Microprocessor:writeRegister(index)
         if index == 0 then
-            self.accumulator = self.data_bus
+            self.accumulator = self:getDataBus()
         else
-            self.registers[index] = self.data_bus
+            self.gp_registers[index] = self:getDataBus()
         end
+    end
+
+    function Microprocessor:writeTempRegister()
+        self.alu_temp_register = self:getDataBus()
     end
 
     function Microprocessor:readDataPins()
@@ -670,8 +715,8 @@ do -- ## Micro Instructions ## -- Manipulating data_bus, flags, fetching data, e
     end
 
     function Microprocessor:decodeRegister()
-        local hi_reg = bit.rshift(bit.band(self:getDataBus(), 0xf0), 4)
-        local lo_reg = bit.band(self:getDataBus(), 0x0f)
+        local lo_reg = bit.rshift(bit.band(self:getDataBus(), 0xf0), 4)
+        local hi_reg = bit.band(self:getDataBus(), 0x0f)
 
         return lo_reg, hi_reg
     end
@@ -681,7 +726,7 @@ do -- ## Micro Instructions ## -- Manipulating data_bus, flags, fetching data, e
     end
 
     function Microprocessor:writeAddressBusHighByte()
-        self.address_bus = self.data_bus * 0x0100 + bit.band(self.address_bus, 0x00ff)
+        self.address_bus = bit.lshift(self.data_bus,8) + bit.band(self.address_bus, 0x00ff)
     end
 
     function Microprocessor:writeInstructionPointerLowByte()
@@ -742,6 +787,7 @@ do -- ## Micro Instructions ## -- Manipulating data_bus, flags, fetching data, e
 
         -- determines what the zero flag should be given some data
         function Microprocessor:setZFlagFor(val)
+            print("setting zero flag with val = " .. val)
             if (val == 0) then self:setZero() else self:clearZero() end
         end
 
