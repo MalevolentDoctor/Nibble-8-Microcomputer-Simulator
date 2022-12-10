@@ -5,8 +5,8 @@ function Workbench.new()
 	local self = {}
 	setmetatable(self, Workbench)
 
-	self.obj_computer = Computer.new() -- object of the desktop (your PC) screen
-	self.obj_microcomputer = Microcomputer.new() -- object containing the microcomputer
+	self.objComputer = Computer.new(self) -- object of the desktop (your PC) screen
+	self.objMicrocomputer = Microcomputer.new(self) -- object containing the microcomputer
 
 	self.page = 0
 
@@ -25,20 +25,20 @@ function Workbench:update(dt)
 
 	if self.page == 0 then
 		-- if on the first page we update the desktop screen on the computer
-		self.obj_computer:update()
+		self.objComputer:update()
 	elseif self.page == 1 then
-		self.obj_microcomputer:update(dt)
+		self.objMicrocomputer:update(dt)
 	end
 end
 
 function Workbench:draw()
 	if self.page == 0 then
 		-- if on the first page we draw the desktop screen on the computer
-		self.obj_computer:draw()
+		self.objComputer:draw()
 		self.spr_workbench_pg1_bg:draw()
 	elseif self.page == 1 then
 		love.graphics.setCanvas(self.temp_canvas)
-		self.obj_microcomputer:draw()
+		self.objMicrocomputer:draw()
 		love.graphics.reset()
 		love.graphics.draw(self.temp_canvas, 0, 0, 0, App.scale, App.scale)
 	end
