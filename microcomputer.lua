@@ -3,31 +3,31 @@ require("fonts.fonts")
 Microcomputer = {};
 Microcomputer.__index = Microcomputer;
 
-function Microcomputer.new()
+function Microcomputer.new(parent_workbench)
     local self = {}
     setmetatable(self, Microcomputer);
 
     self.active = true
-
-    self.obj_microprocessor = Microprocessor.new(self,8);
+    self.thisWorkbench = parent_workbench
+    self.objMicroprocessor = Microprocessor.new(self,8);
     self.address_bus = 0x0000
     self.data_bus = 0x00
 
     self.ram_size = 0x0100 -- 4kb ram
     self.rom_size = 0x0100 -- 4kb rom
 
-    self.obj_ram = Ram.new(self, 0, self.ram_size)
-    self.obj_rom = Rom.new(self, 0xFFFF - self.rom_size + 1, self.rom_size)
+    self.objRam = Ram.new(self, 0, self.ram_size)
+    self.objRom = Rom.new(self, 0xFFFF - self.rom_size + 1, self.rom_size)
 
     -- AESTHETIC PARAMETERS
     local _, window_height = App.getWindowSize()
     do -- registers window
-        self.reg_win = Window.new(self.obj_microprocessor, 0, 0, 0, 0, 3, 3, 3, 2, 
+        self.reg_win = Window.new(self.objMicroprocessor, 0, 0, 0, 0, 3, 3, 3, 2, 
             {"pxl_5x7_thin", "pxl_5x7_bold", "pxl_5x7_thin"},
-            {{'4B051F', '380317', '000'}, {'000'}, {'000'}}
+            {{'7CADC3', 'C89AD9', '000'}, {'000'}, {'000'}}
         )
 
-        self.reg_win.reg_rows = math.ceil(self.obj_microprocessor.reg_size/2)
+        self.reg_win.reg_rows = math.ceil(self.objMicroprocessor.reg_size/2)
 
         -- translation layer
         self.reg_win.trans_reg_alpha = {"B", "C", "D", "E", "G", "H", "X", "Y"}
@@ -69,7 +69,7 @@ function Microcomputer.new()
             self:printText({self.col_txt[1], "INSTR " .. numbers.toBin(self.other.instruction_pointer, 16)}, self.fnt_txt2)
         end
         
-        self.reg_win.h = self.reg_win:getHeight(self.obj_microprocessor)
+        self.reg_win.h = self.reg_win:getHeight(self.objMicroprocessor)
         self.reg_win.y = App.window_height - self.reg_win.h
         self.reg_win.w = self.reg_win.fnt_txt1_w * 23 + 2*self.reg_win.int_buffer -- check
 
@@ -77,9 +77,9 @@ function Microcomputer.new()
     end
 
     do -- RAM window
-        self.ram_win = Window.new(self.obj_ram, 0, 0, 0, 0, 3, 3, 3, 2,
+        self.ram_win = Window.new(self.objRam, 0, 0, 0, 0, 3, 3, 3, 2,
         {"pxl_5x7_thin", "pxl_5x7_bold", "pxl_5x7_thin"},
-        {{'4B051F', '380317'}, {'000'}, {'000'}}
+        {{'7CADC3', 'C89AD9'}, {'000'}, {'000'}}
         )
         
         self.ram_win.vals_in_row = 8
@@ -121,7 +121,7 @@ function Microcomputer.new()
 
     -- sprites
     self.spr_microprocessor = Sprite.new(
-        -1, 10, 1, 1, 
+        -1, 10, 2, 2, 
         {"assets/png/microcontroller_chip.png"}, "nearest",
         {hover = false, visible = false}
     )
@@ -136,7 +136,7 @@ function Microcomputer:update(dt)
         local edit_key = keyboard:getEditKey()
 
         if nav_key == "pagedown" then
-            self.ram_win.row_offset = math.min(math.ceil(self.obj_ram.size/self.ram_win.vals_in_row) - self.ram_win.window_rows, self.ram_win.row_offset + self.ram_win.window_rows - 1);
+            self.ram_win.row_offset = math.min(math.ceil(self.objRam.size/self.ram_win.vals_in_row) - self.ram_win.window_rows, self.ram_win.row_offset + self.ram_win.window_rows - 1);
             self.ram_win.char_offset = self.ram_win.row_offset*self.ram_win.vals_in_row;
         elseif nav_key == "pageup" then
             self.ram_win.row_offset = math.max(0, self.ram_win.row_offset - self.ram_win.window_rows + 1);
@@ -148,11 +148,11 @@ function Microcomputer:update(dt)
         end
 
         if nav_key == "home" then
-            self.obj_microprocessor:start()
-            self.obj_microprocessor.active = true
+            self.objMicroprocessor:start()
+            self.objMicroprocessor.active = true
         end
 
-        self.obj_microprocessor:update(dt)
+        self.objMicroprocessor:update(dt)
 
         keyboard:reset()
     end
@@ -185,19 +185,19 @@ function Microcomputer:drawMicroprocessor()
 
     love.graphics.setColor(0,0,0)
     love.graphics.setFont(Font.fonts["pxl_5x7_bold"])
-    love.graphics.print("NIBBLE-8", x + 23, y + 7)
-    love.graphics.print("FLAGS", x + 23, y + 65)
+    love.graphics.print("NIBBLE-8", x + 46, y + 14)
+    love.graphics.print("FLAGS", x + 46, y + 130)
     love.graphics.setFont(Font.fonts["pxl_5x7_thin"])
-    love.graphics.print("GP REGISTERS:" .. tostring(self.obj_microprocessor.reg_size), x + 23, y + 20)
-    love.graphics.print("RAM:" .. tostring(self.obj_ram.size) .. " Bytes", x + 23, y + 30)
-    love.graphics.print("ROM:" .. tostring(self.obj_rom.size) .. " Bytes", x + 23, y + 40)
-    love.graphics.print("IO:" .. tostring("NaN") .. " Ports", x + 23, y + 50)
+    love.graphics.print("GP REGISTERS:" .. tostring(self.objMicroprocessor.reg_size), x + 46, y + 40)
+    love.graphics.print("RAM:" .. tostring(self.objRam.size) .. " Bytes", x + 46, y + 60)
+    love.graphics.print("ROM:" .. tostring(self.objRom.size) .. " Bytes", x + 46, y + 80)
+    love.graphics.print("IO:" .. tostring("NaN") .. " Ports", x + 46, y + 100)
 
-    love.graphics.print("SIGN:      " .. tostring(self.obj_microprocessor:getSign()), x + 23, y + 75)
-    love.graphics.print("ZERO:      " .. tostring(self.obj_microprocessor:getZero()), x + 23, y + 85)
-    love.graphics.print("PARITY:    " .. tostring(self.obj_microprocessor:getParity()), x + 23, y + 95)
-    love.graphics.print("CARRY:     " .. tostring(self.obj_microprocessor:getCarry()), x + 23, y + 105)
-    love.graphics.print("INTRPT:    " .. tostring(self.obj_microprocessor:getInterruptDisable()), x + 23, y + 115)
+    love.graphics.print("SIGN:      " .. tostring(self.objMicroprocessor:getSign()), x + 46, y + 150)
+    love.graphics.print("ZERO:      " .. tostring(self.objMicroprocessor:getZero()), x + 46, y + 170)
+    love.graphics.print("PARITY:    " .. tostring(self.objMicroprocessor:getParity()), x + 46, y + 190)
+    love.graphics.print("CARRY:     " .. tostring(self.objMicroprocessor:getCarry()), x + 46, y + 210)
+    love.graphics.print("INTRPT:    " .. tostring(self.objMicroprocessor:getInterruptDisable()), x + 46, y + 230)
 end
 
 function Microcomputer:drawROM()
@@ -207,23 +207,26 @@ function Microcomputer:drawIO()
 end
 
 function Microcomputer:readAddressPins()
-    self.address_bus = self.obj_microprocessor.address_bus
+    self.address_bus = self.objMicroprocessor.address_bus
 end
 
 function Microcomputer:readDataPins()
-    self.data_bus = self.obj_microprocessor.data_bus
+    self.data_bus = self.objMicroprocessor.data_bus
 end
 
 function Microcomputer:readMemory()
     self:readAddressPins()
-    self.data_bus = self.obj_ram.ram[self.address_bus] or self.obj_rom.rom[self.address_bus]
+    self.data_bus = self.objRam.ram[self.address_bus] or self.objRom.rom[self.address_bus]
+    print("read memory address: 0x" .. bit.tohex(self.address_bus, 4) .. ", value: 0x" .. bit.tohex(self.data_bus, 2))
 end
 
 function Microcomputer:writeMemory()
     self:readAddressPins()
     self:readDataPins()
+
+    print("write memory address: 0x" .. bit.tohex(self.address_bus, 4) .. ", value: 0x" .. bit.tohex(self.data_bus, 2))
     
-    if self.obj_ram.ram[self.address_bus] ~= nil then
-        self.obj_ram.ram[self.address_bus] = self.data_bus
+    if self.objRam.ram[self.address_bus] ~= nil then
+        self.objRam.ram[self.address_bus] = self.data_bus
     end
 end
