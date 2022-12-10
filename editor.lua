@@ -35,7 +35,7 @@ function Editor.new(console, x, y, w, h, shader_adjust)
 
 	-- window parameters
 	self.win = Window.new(self, self.x, self.y, self.w, self.h, 0, 20, 5, 0,
-	{"dos16", "pxl_5x7_bold", "pxl_5x7_thin"}, -- fonts
+	{"dos16", "pxl_5x7_bold", "pxl_5x7_bold"}, -- fonts
 	{{"202020", "101010"}, {"000"}, {"ccc", "ddd"}} -- colours
 	)
     self.win.line_spacing = 3;
