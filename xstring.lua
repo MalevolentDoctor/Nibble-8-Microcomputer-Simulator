@@ -9,7 +9,7 @@ function string:split(sep)
 		sep = "%s" -- default to white space seperator
 	end
 	local t = {n = 0}
-	for str in string.gmatch(self, "([^".. sep .. "]+)") do
+	for str in self:gmatch("([^".. sep .. "]+)") do
 		table.insert(t, str)
 		t.n = t.n + 1
 	end
