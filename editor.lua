@@ -62,8 +62,7 @@ function Editor.new(console, x, y, w, h, shader_adjust)
 
     self.nav_vert_cursor = {
         ["up"] = -1, ["down"] = 1,
-        ["pageup"] = -self.lines, ["pagedown"] = self.lines,
-        ["home"] = -math.huge, ["end"] = math.huge
+        ["pageup"] = -self.lines, ["pagedown"] = self.lines
     }
 
 	print("Created console successfully")
@@ -86,7 +85,10 @@ function Editor:update()
         if nav_key == "left" then self:cursorLeft() end
         if nav_key == "right" then self:cursorRight() end
 
-        if (nav_key == "up" or nav_key == "down" or nav_key == "pageup" or nav_key == "pagedown" or nav_key == "home" or nav_key == "end") then
+        if nav_key == "home" then self:cursorHome() end
+        if nav_key == "end" then self:cursorEnd() end
+
+        if (nav_key == "up" or nav_key == "down" or nav_key == "pageup" or nav_key == "pagedown") then
             self:shiftVertCursor(self.nav_vert_cursor[nav_key])
         end
 
@@ -220,13 +222,21 @@ do -- NAVIGATION [enter, arrow keys, home/end/pg up/pg down]
     -- move the vertical cursor by the amount specified by shift.
     function Editor:shiftVertCursor(shift)
         if shift < 0 then
-            self.vert_cursor = math.max(1, self.vert_cursor + shift);
+            self.vert_cursor = math.max(1, self.vert_cursor + shift)
         else
-            self.vert_cursor = math.min(self.text.n, self.vert_cursor + shift);
+            self.vert_cursor = math.min(self.text.n, self.vert_cursor + shift)
         end
 
-        self.horz_cursor = math.min(self.horz_cursor, string.len(self.text[self.vert_cursor]) + 1);
-        self:updateScrollPosition();
+        self.horz_cursor = math.min(self.horz_cursor, string.len(self.text[self.vert_cursor]) + 1)
+        self:updateScrollPosition()
+    end
+
+    function Editor:cursorHome()
+        self.horz_cursor = 1
+    end
+
+    function Editor:cursorEnd()
+        self.horz_cursor = self:thisLineLen() + 1
     end
 
     -- update the region of the screen visible so that the cursor may be seen
