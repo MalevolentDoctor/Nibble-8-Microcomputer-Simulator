@@ -168,11 +168,6 @@ function Console:update()
         if nav_key == "up" then self:upArrow() end
         if nav_key == "down" then self:downArrow() end
 
-
-        if misc_key == "escape" then
-            self.active = false
-        end
-
         keyboard:reset();
     end
 end
