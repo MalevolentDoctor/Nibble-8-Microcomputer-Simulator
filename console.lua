@@ -312,6 +312,8 @@ end
 
 -- assembles the code in the editor or loaded from a file
 function Console:buildFile(command)
+    local objAssembler = Assembler:new()
+
     local ifname = command[2] -- input file
     local ofname = command[3] -- output file
 
@@ -334,7 +336,8 @@ function Console:buildFile(command)
 
         -- append .nib extension if none provided
         if not ofname:includes("%.") then ofname = ofname .. ".nib" end
-        compile_message = Assembler:assemble(self.editor.text, "editor/saves/" .. ofname)
+        if self.objEditor.text.n == 1 then print("n=1") end
+        compile_message = objAssembler:assemble(self.objEditor.text, "editor/saves/" .. ofname)
     else
         -- if two files are provided then we load locally then build
         if not ifname:includes("%.") then ifname = ifname .. ".txt" end
@@ -342,7 +345,7 @@ function Console:buildFile(command)
 
         local ifile_text, err = table.textLoad("editor/saves/" .. ifname)
         if err == nil then
-            compile_message = Assembler:assemble(ifile_text, "editor/saves/" .. ofname)
+            compile_message = objAssembler:assemble(ifile_text, "editor/saves/" .. ofname)
         else
             self:consolePrint("Error: failed to load file " .. ifname)
             return false

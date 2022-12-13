@@ -1,27 +1,35 @@
 local utf8 = require("utf8")
 local opcodes = require("opcodes")
 
-Assembler = {
-    short_mnemonic_table = {
+Assembler = {}
+Assembler.__index = Assembler
+
+function Assembler.new()
+    local self = {}
+    setmetatable(self, Assembler)
+
+    self.short_mnemonic_table = {
         adc = -1, sbc = -1, ini = "inip", dci = "dcip", ins = "insp", dcs = "dcsp", clc = "clrc", cli = "clri", 
         cls = "clrs", clv = "clrv", clz = "clrz", stc = "setc", sti = "seti", sts = "sets", stv = "setv", stz = "setz", 
         ["and"] = "ana", ora = -1, xor = -1, ["not"] = "nota", cmp = -1, rar = "rort", ral = "rolt"
-    },
+    }
 
-    oc55 = {noop=0, halt=0, rstt=0, brek=0, mvrr=0, stma=0, staz=0, ldma=0, ldaz=0, psha=0, plla=0, acra=0, acia=0,
+    self.oc55 = {noop=0, halt=0, rstt=0, brek=0, mvrr=0, stma=0, staz=0, ldma=0, ldaz=0, psha=0, plla=0, acra=0, acia=0,
             scra=0, scia=0, inip=0, dcip=0, insp=0, dcsp=0, anra=0, ania=0, orra=0, oria=0, xora=0, xoia=0, nota=0,
             rort=0, rolt=0, jump=0, jpsn=0, jpsp=0, jpez=0, jpnz=0, jpic=0, jpnc=0, jpiv=0, jpnv=0, call=0, retn=0,
             clrz=0, clrs=0, clrc=0, clri=0, clrv=0, setz=0, sets=0, setc=0, seti=0, setv=0, tfzi=0, tfiz=0, tfas=0,
-            tfsa=0, tffa=0, tfaf=0},
+            tfsa=0, tffa=0, tfaf=0}
 
-    reg_alpha = {A = 0x0, B = 0x1, C = 0x2, D = 0x3, E = 0x4, H = 0x5, L = 0x6, X = 0x7, Y = 0x8},
-    machine_code = "",
-    program_index = 1,
-    start_index = 0xfffc,
-    assembler_report = {n = 0},
-    labels = {},
-    limitation = "oc55"
-}
+    self.reg_alpha = {A = 0x0, B = 0x1, C = 0x2, D = 0x3, E = 0x4, H = 0x5, L = 0x6, X = 0x7, Y = 0x8}
+    self.machine_code = ""
+    self.program_index = 1
+    self.start_index = 0xfffc
+    self.assembler_report = {n = 0}
+    self.labels = {}
+    self.limitation = "oc55"
+
+    return self
+end
 
 function Assembler:assemble(code, filename)
     -- debug code input
@@ -123,6 +131,9 @@ function Assembler:assemble(code, filename)
     end
 
     self:addProgramIndex(-1)
+    if (self.program_index <= 0) then
+        self:assembleMsg("Error: there is nothing to assemble")
+    end
 
     self.start_index = self.start_index - self.program_index
     self:resolveLabels()
@@ -132,6 +143,26 @@ function Assembler:assemble(code, filename)
     print("start index: " .. tostring(self.start_index))
     print("program index: " .. tostring(self.program_index))
 
+    -- check for errors, whether or not to compile
+    local num_errors = 0;
+    local num_warnings = 0;
+    for _,v in ipairs(self.assembler_report) do
+        if v:sub(1, 5) == "Error" then num_errors = num_errors + 1 end
+        if v:sub(1, 7) == "Warning" then num_warnings = num_warnings + 1 end
+    end
+
+    if num_errors > 0 then
+        self:assembleMsg("Fatal errors occured during assembly")
+        return self.assembler_report
+    end
+
+    if num_warnings > 0 then
+        self:assembleMsg("file assembled with " .. tostring(num_warnings) .. " warnings")
+        table.text_save({n = 1, self.machine_code}, filename)
+        return self.assembler_report
+    end
+
+    self:assembleMsg("file assembled with no errors or warnings")
     table.text_save({n = 1, self.machine_code}, filename)
     return self.assembler_report
 end
