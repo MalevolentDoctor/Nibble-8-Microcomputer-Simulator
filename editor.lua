@@ -194,12 +194,7 @@ do -- NAVIGATION [enter, arrow keys, home/end/pg up/pg down]
 
     -- move cursor 1 space to the left or right
     function Editor:cursorLeft()
-        if self.horz_cursor == 1 then
-            if self.vert_cursor > 1 then
-                self.vert_cursor = self.vert_cursor - 1;
-                self.horz_cursor = string.len(self.text[self.vert_cursor]) + 1;
-            end
-        else
+        if self.horz_cursor ~= 1 then
             self.horz_cursor = self.horz_cursor - 1;
         end
 
@@ -207,12 +202,7 @@ do -- NAVIGATION [enter, arrow keys, home/end/pg up/pg down]
     end
 
     function Editor:cursorRight()
-        if self.horz_cursor == string.len(self.text[self.vert_cursor]) + 1 then
-            if self.vert_cursor < self.text.n then
-                self.vert_cursor = self.vert_cursor + 1;
-                self.horz_cursor = 1;
-            end
-        else 
+        if self.horz_cursor ~= string.len(self.text[self.vert_cursor]) + 1 then
             self.horz_cursor = self.horz_cursor + 1
         end
 
