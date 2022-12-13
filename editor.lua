@@ -32,6 +32,7 @@ function Editor.new(console, x, y, w, h, shader_adjust)
 
 	self.vert_cursor = 1;           -- vertical position of the cursor
     self.horz_cursor = 1;           -- horizontal position of the cursor
+    self.horz_cursor_cache = self.horz_cursor;
 
 	-- window parameters
 	self.win = Window.new(self, self.x, self.y, self.w, self.h, 0, 40, 10, 0,
@@ -196,6 +197,7 @@ do -- NAVIGATION [enter, arrow keys, home/end/pg up/pg down]
     function Editor:cursorLeft()
         if self.horz_cursor ~= 1 then
             self.horz_cursor = self.horz_cursor - 1;
+            self.horz_cursor_cache = self.horz_cursor
         end
 
         self:updateScrollPosition();
@@ -204,6 +206,7 @@ do -- NAVIGATION [enter, arrow keys, home/end/pg up/pg down]
     function Editor:cursorRight()
         if self.horz_cursor ~= string.len(self.text[self.vert_cursor]) + 1 then
             self.horz_cursor = self.horz_cursor + 1
+            self.horz_cursor_cache = self.horz_cursor
         end
 
         self:updateScrollPosition();
@@ -216,8 +219,7 @@ do -- NAVIGATION [enter, arrow keys, home/end/pg up/pg down]
         else
             self.vert_cursor = math.min(self.text.n, self.vert_cursor + shift)
         end
-
-        self.horz_cursor = math.min(self.horz_cursor, string.len(self.text[self.vert_cursor]) + 1)
+        self.horz_cursor = math.min(math.max(self.horz_cursor, self.horz_cursor_cache), string.len(self.text[self.vert_cursor]) + 1)
         self:updateScrollPosition()
     end
 
