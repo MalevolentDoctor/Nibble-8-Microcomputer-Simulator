@@ -408,6 +408,8 @@ function Console:openEditor(command)
         f_info = love.filesystem.getInfo("editor/saves/" .. fname, f_info);
         if f_info == nil then -- if it does not exist, give the name to the editor
             self.objEditor.file_name = fname
+            self.objEditor.text = {n = 1, ""}
+            self.objEditor:reset()
         else  -- if the file does exist, load it in
             local ok = self:loadFile({"!load", command[2]})
             if not ok then return false end
@@ -567,20 +569,38 @@ end
 
 -- create a new file in the editor (replacing the old one)
 function Console:newFile(command)
+    local fname = command[2]
+
     -- throw an error if there is currently an unsaved file in the editor
     if command[1] == "new" and self.objEditor.saved == false then
         self:consolePrint("Warning: File not saved, use '!new' to override"); return;
     end
 
     -- check that no additional arguments were provided
-    if command[2] ~= nil then
+    if command[3] ~= nil then
         self:consolePrint("Error: Too many arguments provided"); return;
+    end
+
+    if fname ~= nil then
+        -- append file extension if necessary
+        if not fname:includes("%.") then fname = fname .. ".txt" end
+
+        -- see if the requested file exists
+        local f_info = {};
+        f_info = love.filesystem.getInfo("editor/saves/" .. fname, f_info);
+        if (f_info ~= nil and command[1] == "new") then
+            self:consolePrint("Error: File already exists, use '!new' to overwrite")
+            return false
+        elseif (f_info ~= nil) then
+            self:deleteFile({"delete", fname})
+        end
     end
 
     -- resetting the editor to a blank slate
     self.objEditor.text = {n = 1, ""};
     self.objEditor.file_name = "Untitled"
     self.objEditor:reset()
+    return true
 end
 
 -- displays the constent of the microcomputer's RAM in the console
