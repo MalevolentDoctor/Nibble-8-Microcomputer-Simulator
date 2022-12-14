@@ -289,7 +289,12 @@ do -- Moving Data
             print(k,v)
         end
         print("")
+    end
 
+    -- copy the contents of one register to another
+    function Microprocessor:mvia()
+        self:meta_getMemByte()
+        self:readRegister(0x0)
     end
 
     -- stores the accumulator at the specified address in memory

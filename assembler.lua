@@ -11,10 +11,12 @@ function Assembler.new()
     self.short_mnemonic_table = {
         adc = -1, sbc = -1, ini = "inip", dci = "dcip", ins = "insp", dcs = "dcsp", clc = "clrc", cli = "clri", 
         cls = "clrs", clv = "clrv", clz = "clrz", stc = "setc", sti = "seti", sts = "sets", stv = "setv", stz = "setz", 
-        ["and"] = "ana", ora = -1, xor = -1, ["not"] = "nota", cmp = -1, rar = "rort", ral = "rolt"
+        ["and"] = "ana", ora = -1, xor = -1, ["not"] = "nota", cmp = -1, rar = "rort", ral = "rolt", jmp="jump", jsn="jpsn",
+        jsp = "jpsp", jez = "jpez", jnz = "jpnz", jic = "jpic", jnc = "jpnc", jiv = "jpiv", jnv = "jpnv", cll = "call",
+        ret = "retn", tzi = "tfzi", tiz = "tfiz", tas = "tfas", tsa = "tfsa", tfa = "tffa", taf = "tfaf"
     }
 
-    self.oc55 = {noop=0, halt=0, rstt=0, brek=0, mvrr=0, stma=0, staz=0, ldma=0, ldaz=0, psha=0, plla=0, acra=0, acia=0,
+    self.oc55 = {noop=0, halt=0, rstt=0, brek=0, mvrr=0, mvia=0, stma=0, staz=0, ldma=0, ldaz=0, psha=0, plla=0, acra=0, acia=0,
             scra=0, scia=0, inip=0, dcip=0, insp=0, dcsp=0, anra=0, ania=0, orra=0, oria=0, xora=0, xoia=0, nota=0,
             rort=0, rolt=0, jump=0, jpsn=0, jpsp=0, jpez=0, jpnz=0, jpic=0, jpnc=0, jpiv=0, jpnv=0, call=0, retn=0,
             clrz=0, clrs=0, clrc=0, clri=0, clrv=0, setz=0, sets=0, setc=0, seti=0, setv=0, tfzi=0, tfiz=0, tfas=0,
@@ -259,11 +261,13 @@ do -- Moving Data
 
     function Assembler:mov(line, args)
         -- check the arguments
-        local _, arg_types = self:handleArguments(line, args, {register = 4}, {register = 4})
+        local _, arg_types = self:handleArguments(line, args, {register = 4, immediate = 8}, {register = 4, none = 0})
 
         -- call the appropriate function
         if (arg_types[1] == "register" and arg_types[1] == "register") then
             self:assembleOperation("mvrr", line, args)
+        elseif (arg_types[1] == "immediate" and arg_types[2] == "none") then
+            self:assembleOperation("mvia", line, args)
         end
     end
 
